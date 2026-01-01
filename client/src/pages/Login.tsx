@@ -1,16 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/Input';
-import { Mail, Lock, LogIn, Facebook } from 'lucide-react';
+import { Mail, Lock, LogIn, Facebook, Loader } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
+    const { signInWithGoogle, signInWithFacebook } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, you would validate creds here first
-        navigate('/social-connect');
+        setLoading(true);
+        setError(null);
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            if (error) throw error;
+            navigate('/profile-setup');
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        try {
+            await signInWithGoogle();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleFacebookLogin = async () => {
+        try {
+            await signInWithFacebook();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -19,17 +54,26 @@ const Login: React.FC = () => {
             subtitle="Log in to access your analytics dashboard"
         >
             <form className="space-y-4" onSubmit={handleLogin}>
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm">
+                        {error}
+                    </div>
+                )}
                 <Input
                     label="Email Address"
                     type="email"
                     icon={Mail}
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                 />
                 <Input
                     label="Password"
                     type="password"
                     icon={Lock}
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                 />
 
                 <div className="flex items-center justify-between text-sm">
@@ -50,10 +94,11 @@ const Login: React.FC = () => {
 
                 <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <LogIn size={20} />
-                    <span>Log In</span>
+                    {loading ? <Loader className="animate-spin" size={20} /> : <LogIn size={20} />}
+                    <span>{loading ? 'Logging in...' : 'Log In'}</span>
                 </button>
             </form>
 
@@ -68,7 +113,7 @@ const Login: React.FC = () => {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                    <button className="flex items-center justify-center py-2.5 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/30 transition-all">
+                    <button onClick={handleGoogleLogin} className="flex items-center justify-center py-2.5 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/30 transition-all">
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path
                                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -88,7 +133,7 @@ const Login: React.FC = () => {
                             />
                         </svg>
                     </button>
-                    <button className="flex items-center justify-center py-2.5 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/30 transition-all text-white">
+                    <button onClick={handleFacebookLogin} className="flex items-center justify-center py-2.5 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/30 transition-all text-white">
                         <Facebook className="w-5 h-5 text-blue-500" />
                     </button>
                 </div>

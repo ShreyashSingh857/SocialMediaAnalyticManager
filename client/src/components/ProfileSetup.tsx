@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import './ProfileSetup.css';
 
 interface ProfileData {
@@ -96,15 +98,45 @@ const ProfileSetup = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { user } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.consent) {
       alert("Please provide consent to proceed.");
       return;
     }
-    console.log("Profile Data Submitted:", formData);
-    alert("Profile saved successfully! (Check console for data)");
-    // Here we will eventually call the API
+
+    if (!user) {
+      alert("No user found. Please log in.");
+      return;
+    }
+
+    try {
+      const updates = {
+        id: user.id,
+        full_name: formData.name,
+        age: parseInt(formData.age),
+        instagram: formData.instagram,
+        country: formData.country,
+        location: formData.location,
+        description: formData.description,
+        content_type: formData.contentType,
+        updated_at: new Date(),
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(updates);
+
+      if (error) throw error;
+
+      alert("Profile saved successfully!");
+      // Navigate to dashboard or next step here if needed
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      alert(`Error saving profile: ${error.message}`);
+    }
   };
 
   // Calculate progress percentage

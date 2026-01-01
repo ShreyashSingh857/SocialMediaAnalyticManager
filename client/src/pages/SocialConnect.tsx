@@ -1,8 +1,11 @@
 import React from 'react';
 import AuthLayout from '../components/AuthLayout';
 import { Facebook, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const SocialConnect: React.FC = () => {
+    const { signInWithGoogle, signInWithFacebook } = useAuth();
+
     return (
         <AuthLayout
             title="Connect Accounts"
@@ -18,7 +21,7 @@ const SocialConnect: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                    <button className="w-full bg-white text-gray-900 font-bold py-3.5 px-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 flex items-center justify-center space-x-3 group relative overflow-hidden">
+                    <button onClick={() => signInWithGoogle()} className="w-full bg-white text-gray-900 font-bold py-3.5 px-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 flex items-center justify-center space-x-3 group relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <img
                             src="https://www.google.com/favicon.ico"
@@ -28,7 +31,7 @@ const SocialConnect: React.FC = () => {
                         <span className="relative z-10">Connect with Google</span>
                     </button>
 
-                    <button className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3.5 px-4 rounded-lg shadow-lg shadow-[#1877F2]/20 transition-all duration-300 flex items-center justify-center space-x-3">
+                    <button onClick={() => signInWithFacebook()} className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3.5 px-4 rounded-lg shadow-lg shadow-[#1877F2]/20 transition-all duration-300 flex items-center justify-center space-x-3">
                         <Facebook className="w-5 h-5" />
                         <span>Connect with Facebook</span>
                     </button>
