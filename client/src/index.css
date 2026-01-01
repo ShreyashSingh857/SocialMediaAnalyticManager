@@ -40,11 +40,20 @@
 }
 
 body {
+  font-family: var(--font-main);
+  background-color: var(--bg-darker);
+  color: var(--text-main);
   margin: 0;
   display: flex;
   place-items: center;
+  justify-content: center;
   min-width: 320px;
   min-height: 100vh;
+  background-image: 
+    radial-gradient(circle at 10% 20%, var(--primary-glow) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, var(--accent-glow) 0%, transparent 20%);
+  background-attachment: fixed;
+  overflow-x: hidden;
 }
 
 /* Override default body flex from standard vite template if needed, 
