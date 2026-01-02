@@ -1,8 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import SocialConnect from './pages/SocialConnect';
+import Dashboard from './pages/Dashboard';
+import AuthCallback from './pages/AuthCallback';
 import ProfileSetup from './components/ProfileSetup';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
@@ -19,13 +21,15 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Auth Callback Route - accessible while processing auth */}
+            <Route path="/auth/callback" element={<AuthCallback />} />
           </Route>
 
           {/* Protected Routes - redirect to login if not logged in */}
           <Route element={<ProtectedRoute />}>
             <Route path="/social-connect" element={<SocialConnect />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
-            <Route path="/" element={<Navigate to="/profile-setup" replace />} />
+            <Route path="/" element={<Dashboard />} />
           </Route>
         </Routes>
       </Router>
