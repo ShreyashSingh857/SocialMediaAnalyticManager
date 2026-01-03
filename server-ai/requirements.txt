@@ -5,3 +5,6 @@ pandas
 openai
 requests
 python-dotenv
+supabase
+pydantic-settings
+

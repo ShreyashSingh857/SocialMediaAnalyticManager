@@ -1,5 +1,0 @@
-import { Request, Response } from 'express';
-
-export const getFeed = async (req: Request, res: Response) => {
-    res.status(200).json({ feed: [] });
-};

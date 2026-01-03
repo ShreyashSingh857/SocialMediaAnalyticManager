@@ -10,16 +10,17 @@ interface DataPoint {
 interface AnalyticsChartProps {
     title: string;
     data: DataPoint[];
+    valueFormatter?: (value: number) => string;
     color?: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, formatter }: any) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-[#1a1b23] border border-gray-700 p-2 rounded shadow-xl text-xs">
                 <p className="text-gray-400 mb-1">{format(new Date(label), 'MMM d, yyyy')}</p>
                 <p className="text-white font-semibold">
-                    {payload[0].value.toLocaleString()}
+                    {formatter ? formatter(payload[0].value) : payload[0].value.toLocaleString()}
                 </p>
             </div>
         );
@@ -27,11 +28,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ title, data, color = "#3b82f6" }) => {
+export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ title, data, color = "#3b82f6", valueFormatter }) => {
     return (
         <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5">
             <h3 className="text-gray-400 text-sm font-medium mb-6">{title}</h3>
-            <div className="h-[300px] w-full">
+            <div className="h-[300px] w-full" style={{ width: '100%', minWidth: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={data}
@@ -62,10 +63,10 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ title, data, col
                             axisLine={false}
                             tickLine={false}
                             tickFormatter={(number) =>
-                                new Intl.NumberFormat('en', { notation: "compact", compactDisplay: "short" }).format(number)
+                                valueFormatter ? valueFormatter(number) : new Intl.NumberFormat('en', { notation: "compact", compactDisplay: "short" }).format(number)
                             }
                         />
-                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#4b5563', strokeDasharray: '4 4' }} />
+                        <Tooltip content={<CustomTooltip formatter={valueFormatter} />} cursor={{ stroke: '#4b5563', strokeDasharray: '4 4' }} />
                         <Area
                             type="monotone"
                             dataKey="value"
