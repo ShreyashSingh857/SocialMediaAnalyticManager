@@ -11,6 +11,10 @@ import PublicRoute from './components/PublicRoute';
 
 import { AuthProvider } from './contexts/AuthContext';
 
+import { Analytics } from './pages/Analytics';
+
+import SidebarLayout from './components/SidebarLayout';
+
 function App() {
   return (
     <AuthProvider>
@@ -27,9 +31,12 @@ function App() {
 
           {/* Protected Routes - redirect to login if not logged in */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/social-connect" element={<SocialConnect />} />
-            <Route path="/profile-setup" element={<ProfileSetup />} />
-            <Route path="/" element={<Dashboard />} />
+            <Route element={<SidebarLayout />}>
+              <Route path="/social-connect" element={<SocialConnect />} />
+              <Route path="/profile-setup" element={<ProfileSetup />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/" element={<Dashboard />} />
+            </Route>
           </Route>
         </Routes>
       </Router>

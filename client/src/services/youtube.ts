@@ -16,7 +16,9 @@ export const fetchYouTubeStats = async (providerToken: string): Promise<YouTubeS
         });
 
         if (!response.ok) {
-            throw new Error(`YouTube API error: ${response.status} ${response.statusText}`);
+            const errorBody = await response.json().catch(() => null);
+            console.error('YouTube API Error Body:', errorBody);
+            throw new Error(`YouTube API error: ${response.status} ${response.statusText} - ${errorBody?.error?.message || 'Unknown error'}`);
         }
 
         const data = await response.json();
