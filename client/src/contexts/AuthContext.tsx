@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         console.log('Provider Token extracted, fetching YouTube stats...');
                         try {
                             const { fetchYouTubeStats } = await import('../services/youtube');
-                            const stats = await fetchYouTubeStats(session.provider_token);
+                            const stats = await fetchYouTubeStats(session.provider_token!);
 
                             if (stats) {
                                 const { error } = await supabase
