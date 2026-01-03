@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
+import { useYouTubeData } from '../hooks/useYouTubeData';
 import { motion } from 'framer-motion';
 import {
     Instagram,
@@ -8,23 +9,24 @@ import {
 
 const Dashboard = () => {
     const { profile } = useAuth();
+    const { overview, loading } = useYouTubeData();
 
     const stats = [
         {
             label: "Subscribers",
-            value: profile?.youtube_stats?.subscribers ? parseInt(profile.youtube_stats.subscribers).toLocaleString() : "0",
+            value: overview?.subscriberCount ? parseInt(overview.subscriberCount).toLocaleString() : "0",
             change: "+0%",
             neutral: true
         },
         {
             label: "Views",
-            value: profile?.youtube_stats?.views ? parseInt(profile.youtube_stats.views).toLocaleString() : "0",
+            value: overview?.totalViews ? parseInt(overview.totalViews).toLocaleString() : "0",
             change: "+0%",
             neutral: true
         },
         {
             label: "Videos",
-            value: profile?.youtube_stats?.videos ? parseInt(profile.youtube_stats.videos).toLocaleString() : "0",
+            value: overview?.videoCount ? parseInt(overview.videoCount).toLocaleString() : "0",
             change: "+0%",
             neutral: true
         },
@@ -100,7 +102,7 @@ const Dashboard = () => {
                 >
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-semibold">My Profile</h3>
-                        <button className="text-gray-400 hover:text-white"><MoreHorizontal className="w-5 h-5" /></button>
+                        <button className="text-gray-400 hover:text-white" title="More options"><MoreHorizontal className="w-5 h-5" /></button>
                     </div>
 
                     <div className="flex flex-col items-center mb-6">

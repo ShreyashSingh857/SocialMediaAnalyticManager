@@ -69,17 +69,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             const stats = await fetchYouTubeStats(session.provider_token!);
 
                             if (stats) {
-                                const { error } = await supabase
-                                    .from('profiles')
-                                    .update({ youtube_stats: stats })
-                                    .eq('id', session.user.id);
+                                // 1. Upsert Connected Account
+                                // We use upsert so if it doesn't exist, it gets created.
+                                const { data: account, error: accError } = await supabase
+                                    .from('connected_accounts')
+                                    .upsert({
+                                        user_id: session.user.id,
+                                        platform: 'youtube',
+                                        external_account_id: stats.id, // We need the channel ID here!
+                                        account_name: stats.channelName,
+                                        account_handle: stats.customUrl,
+                                        avatar_url: stats.thumbnail,
+                                        last_synced_at: new Date().toISOString(),
+                                        is_active: true
+                                    }, { onConflict: 'user_id,platform,external_account_id' })
+                                    .select()
+                                    .single();
 
-                                if (error) console.error('Error updating profile with YouTube stats:', error);
-                                else {
-                                    console.log('YouTube stats updated successfully');
-                                    // Refresh profile to show new stats
-                                    fetchProfile(session.user.id);
+                                if (accError) {
+                                    console.error('Error upserting connected_account:', accError);
+                                } else if (account) {
+                                    // Upsert Snapshot (One per day)
+                                    // We rely on the unique index (account_id, date(recorded_at))
+                                    // Note: Supabase JS client doesn't support function-based unique constraints in 'onConflict' easily.
+                                    // So we might need to rely on the DB constraint to fail the insert, OR we just insert and let the DB handle it if we had a trigger.
+                                    // BUT, 'upsert' requires a unique constraint name or columns.
+                                    // Since we can't easily target the function index from here, we will try to INSERT.
+                                    // If it fails due to duplicate, we ignore it (or we could delete today's first).
+                                    
+                                    // BETTER APPROACH: Delete any snapshot for today first, then insert new one.
+                                    // This ensures we "rewrite" the row with latest data.
+                                    const today = new Date().toISOString().split('T')[0];
+                                    
+                                    // 1. Delete today's snapshot (if any)
+                                    // We need to filter by date. Since recorded_at is timestamptz, we use gte/lt
+                                    const startOfDay = `${today}T00:00:00.000Z`;
+                                    const endOfDay = `${today}T23:59:59.999Z`;
+                                    
+                                    const { error: delError } = await supabase.from('account_snapshots')
+                                        .delete()
+                                        .eq('account_id', account.id)
+                                        .gte('recorded_at', startOfDay)
+                                        .lte('recorded_at', endOfDay);
+                                    
+                                    if (delError) console.error('Error deleting old snapshot:', delError);
+
+                                    // 2. Insert new snapshot
+                                    const { error: snapError } = await supabase.from('account_snapshots').insert({
+                                        account_id: account.id,
+                                        follower_count: parseInt(stats.subscribers),
+                                        total_views: parseInt(stats.views),
+                                        media_count: parseInt(stats.videos),
+                                        recorded_at: new Date().toISOString()
+                                    });
+                                    
+                                    if (snapError) {
+                                        // If duplicate key error still happens (race condition), ignore it.
+                                        if (snapError.code === '23505') {
+                                            console.log('Snapshot already exists for today (race condition ignored).');
+                                        } else {
+                                            console.error('Error inserting snapshot:', snapError);
+                                        }
+                                    } else {
+                                        console.log('YouTube stats synced to connected_accounts and snapshots');
+                                    }
                                 }
+                                
+                                fetchProfile(session.user.id);
                             }
                         } catch (err) {
                             console.error('Failed to fetch/save YouTube stats:', err);
@@ -101,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 provider: 'google',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`,
-                    scopes: 'https://www.googleapis.com/auth/youtube.readonly',
+                    scopes: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
