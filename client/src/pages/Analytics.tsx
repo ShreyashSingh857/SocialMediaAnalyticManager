@@ -9,7 +9,7 @@ type MetricType = 'views' | 'watchTime' | 'subs';
 
 export const Analytics: React.FC = () => {
     const { user } = useAuth();
-    const { loading, error, overview, history, topVideos } = useYouTubeData();
+    const { loading, error, overview, history, topVideos, insights } = useYouTubeData();
     const [activeMetric, setActiveMetric] = useState<MetricType>('views');
 
     if (!user) return <div className="p-8 text-white">Please log in to view analytics.</div>;
@@ -126,6 +126,50 @@ export const Analytics: React.FC = () => {
                             valueFormatter={chartConfig.formatter}
                         />
                     </div>
+
+                    {/* AI Insights Section */}
+                    {insights && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                            <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <TrendingUp size={100} className="text-blue-500" />
+                                </div>
+                                <h3 className="text-gray-400 text-sm font-medium mb-4">Weekly Trend</h3>
+                                <div className="relative z-10">
+                                    <div className="flex items-baseline gap-2 mb-2">
+                                        <span className={`text-2xl font-bold ${insights.weeklyTrend?.summary.trend_direction === 'up' ? 'text-green-400' : insights.weeklyTrend?.summary.trend_direction === 'down' ? 'text-red-400' : 'text-gray-400'}`}>
+                                            {insights.weeklyTrend?.summary.trend_direction.toUpperCase()}
+                                        </span>
+                                        <span className="text-sm text-gray-500">
+                                            (Slope: {insights.weeklyTrend?.summary.trend_slope})
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-400">
+                                        Peak Views: <span className="text-white font-medium">{insights.weeklyTrend?.summary.peak_views.toLocaleString()}</span> on {insights.weeklyTrend?.summary.peak_date}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Users size={100} className="text-purple-500" />
+                                </div>
+                                <h3 className="text-gray-400 text-sm font-medium mb-4">Engagement</h3>
+                                <div className="relative z-10">
+                                    <div className="text-3xl font-bold text-white mb-2">
+                                        {insights.engagement?.average_engagement_rate}%
+                                    </div>
+                                    <p className="text-sm text-gray-500 mb-4">Avg. Engagement Rate</p>
+                                    <div className="space-y-2">
+                                        <p className="text-xs text-gray-400 uppercase tracking-wider">Top Performer</p>
+                                        <p className="text-sm text-white truncate">
+                                            {insights.engagement?.top_engaged_videos[0]?.title || 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Top Videos Side Panel */}

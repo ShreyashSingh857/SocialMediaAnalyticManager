@@ -27,12 +27,29 @@ export interface ChannelOverview {
     thumbnailUrl: string;
 }
 
+export interface AIInsights {
+    weeklyTrend?: {
+        summary: {
+            trend_direction: 'up' | 'down' | 'flat';
+            trend_slope: number;
+            peak_date: string;
+            peak_views: number;
+        };
+        rolling_averages: { date: string; views_7d_avg: number }[];
+    };
+    engagement?: {
+        average_engagement_rate: number;
+        top_engaged_videos: { id: string; title: string; engagement_rate: number }[];
+    };
+}
+
 interface YouTubeDataState {
     loading: boolean;
     error: string | null;
     overview: ChannelOverview | null;
     history: DailyMetric[];
     topVideos: VideoStats[];
+    insights: AIInsights | null;
 }
 
 export const useYouTubeData = () => {
@@ -41,13 +58,57 @@ export const useYouTubeData = () => {
         error: null,
         overview: null,
         history: [],
-        topVideos: []
+        topVideos: [],
+        insights: null
     });
 
-    const fetchData = useCallback(async () => {
+    const loadInsightsFromDB = async (accountId: string) => {
         try {
-            const { data: sessionData } = await supabase.auth.getSession();
+            const { data: insightsData } = await supabase
+                .from('analytics_insights')
+                .select('*')
+                .eq('account_id', accountId)
+                .order('created_at', { ascending: false });
+
+            if (insightsData) {
+                const weeklyTrend = insightsData.find(i => i.insight_type === 'weekly_trend')?.data;
+                const engagement = insightsData.find(i => i.insight_type === 'engagement_summary')?.data;
+                
+                return { weeklyTrend, engagement };
+            }
+        } catch (err) {
+            console.error("Error loading insights:", err);
+        }
+        return null;
+    };
+
+    const fetchData = useCallback(async () => {
+        // 1. Try to load cached data immediately
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData.session?.user?.id;
+        
+        if (userId) {
+             // We need the account ID first to load cache
+             const { data: account } = await supabase
+                .from('connected_accounts')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('platform', 'youtube')
+                .maybeSingle();
+            
+            if (account) {
+                 // Load cache in background while API fetches
+                 loadFromDB(userId, account.id).then(cachedData => {
+                     if (cachedData) {
+                         setData(prev => ({ ...prev, ...cachedData, loading: false }));
+                     }
+                 });
+            }
+        }
+
+        try {
             const providerToken = sessionData.session?.provider_token;
+
 
             // --- STRATEGY: TRY API FIRST, FALLBACK TO DB ---
 
@@ -83,27 +144,47 @@ export const useYouTubeData = () => {
                 thumbnailUrl: channelItem.snippet.thumbnails?.default?.url
             };
 
-            // 2. Fetch Recent Videos (Uploads)
-            const playlistResp = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=5`, { headers });
-            const playlistJson = await playlistResp.json();
+            // 2. Fetch Recent Videos (Uploads) - Fetch ALL (up to limit)
+            let allVideos: VideoStats[] = [];
+            let nextPageToken: string | undefined = undefined;
+            let fetchedCount = 0;
+            const MAX_VIDEOS_TO_FETCH = 50; // Fetch up to 50 videos for analysis
 
-            let topVideos: VideoStats[] = [];
+            do {
+                const playlistUrl: string = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+                const playlistResp = await fetch(playlistUrl, { headers });
+                const playlistJson = await playlistResp.json();
 
-            if (playlistJson.items?.length) {
-                const videoIds = playlistJson.items.map((item: any) => item.snippet.resourceId.videoId).join(',');
-                const videosResp = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoIds}`, { headers });
-                const videosJson = await videosResp.json();
+                if (playlistJson.items?.length) {
+                    const videoIds = playlistJson.items.map((item: any) => item.snippet.resourceId.videoId);
+                    
+                    // Fetch stats for this batch of 50
+                    const videosResp = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoIds.join(',')}`, { headers });
+                    const videosJson = await videosResp.json();
 
-                topVideos = videosJson.items.map((v: any) => ({
-                    id: v.id,
-                    title: v.snippet.title,
-                    thumbnailUrl: v.snippet.thumbnails?.medium?.url || v.snippet.thumbnails?.default?.url,
-                    publishedAt: v.snippet.publishedAt,
-                    views: parseInt(v.statistics.viewCount || '0'),
-                    likes: parseInt(v.statistics.likeCount || '0'),
-                    comments: parseInt(v.statistics.commentCount || '0')
-                }));
-            }
+                    const batchVideos = videosJson.items.map((v: any) => ({
+                        id: v.id,
+                        title: v.snippet.title,
+                        thumbnailUrl: v.snippet.thumbnails?.medium?.url || v.snippet.thumbnails?.default?.url,
+                        publishedAt: v.snippet.publishedAt,
+                        views: parseInt(v.statistics.viewCount || '0'),
+                        likes: parseInt(v.statistics.likeCount || '0'),
+                        comments: parseInt(v.statistics.commentCount || '0')
+                    }));
+
+                    allVideos = [...allVideos, ...batchVideos];
+                }
+
+                nextPageToken = playlistJson.nextPageToken;
+                fetchedCount += playlistJson.items?.length || 0;
+
+            } while (nextPageToken && fetchedCount < MAX_VIDEOS_TO_FETCH);
+
+            // Sort by views for "Top Videos" list, or keep chronological? 
+            // User wants "Top Performing", so let's sort by views descending.
+            allVideos.sort((a, b) => b.views - a.views);
+            
+            const topVideos = allVideos; // We pass all of them, UI handles display limit
 
             // 3. Fetch Analytics Report (Last 30 Days)
             const endDate = new Date().toISOString().split('T')[0];
@@ -251,9 +332,10 @@ export const useYouTubeData = () => {
     // Helper: Call Server-AI
     const triggerServerProcessing = async (accountId: string, history: DailyMetric[], videos: VideoStats[]) => {
         try {
+            console.log("Triggering Server-AI with:", { accountId, historyCount: history.length, videoCount: videos.length });
             // Assuming Server-AI is running on port 8000
             // In production, this URL should be in environment variables
-            await fetch('http://localhost:8000/api/v1/analytics/process', {
+            const response = await fetch('http://localhost:8000/api/v1/analytics/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -262,38 +344,53 @@ export const useYouTubeData = () => {
                     videos: videos
                 })
             });
-            console.log("Server-AI processing triggered");
+            
+            const result = await response.json();
+            console.log("Server-AI Response:", response.status, result);
+
+            if (!response.ok) {
+                console.error("Server-AI Error:", result);
+            } else {
+                // Success! Re-fetch insights from DB to update UI
+                console.log("AI Processing Complete. Refreshing Insights...");
+                const freshInsights = await loadInsightsFromDB(accountId);
+                if (freshInsights) {
+                    setData(prev => ({ ...prev, insights: freshInsights }));
+                }
+            }
+
         } catch (err) {
             console.warn("Failed to trigger Server-AI:", err);
         }
     };
 
     // Helper: Load data from Supabase
-    const loadFromDB = async (userId: string | undefined, originalError: string = '') => {
+    const loadFromDB = async (userId: string | undefined, accountId?: string, originalError: string = '') => {
         if (!userId) {
-            setData(prev => ({ ...prev, loading: false, error: 'No user. ' + originalError }));
-            return;
+            return null;
         }
 
         console.log("Attempting to load data from DB...");
         try {
-            const { data: account } = await supabase
-                .from('connected_accounts')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('platform', 'youtube')
-                .maybeSingle();
-
-            if (!account) {
-                setData(prev => ({ ...prev, loading: false, error: 'No connected account found in DB. ' + originalError }));
-                return;
+            let targetAccountId = accountId;
+            
+            if (!targetAccountId) {
+                const { data: account } = await supabase
+                    .from('connected_accounts')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .eq('platform', 'youtube')
+                    .maybeSingle();
+                
+                if (!account) return null;
+                targetAccountId = account.id;
             }
 
             // Load Latest Account Snapshot for Overview
             const { data: dbSnapshot } = await supabase
                 .from('account_snapshots')
                 .select('*')
-                .eq('account_id', account.id)
+                .eq('account_id', targetAccountId)
                 .order('recorded_at', { ascending: false })
                 .limit(1)
                 .maybeSingle();
@@ -302,19 +399,21 @@ export const useYouTubeData = () => {
             const { data: dbHistory } = await supabase
                 .from('channel_daily_metrics')
                 .select('*')
-                .eq('account_id', account.id)
+                .eq('account_id', targetAccountId)
                 .order('date', { ascending: true })
                 .limit(30);
 
-            // Load Videos (Get latest 5)
-            // Complex join to get latest snapshot... for now just get video metadata
+            // Load Videos (Get latest 50)
             const { data: dbVideos } = await supabase
                 .from('content_items')
-                .select('*, content_snapshots(views, likes, comments, recorded_at)') // nested select?
-                .eq('account_id', account.id)
-                .eq('type', 'video') // Filter by type
+                .select('*, content_snapshots(views, likes, comments, recorded_at)')
+                .eq('account_id', targetAccountId)
+                .eq('type', 'video')
                 .order('published_at', { ascending: false })
-                .limit(5);
+                .limit(50);
+
+            // Load AI Insights
+            const insights = await loadInsightsFromDB(targetAccountId);
 
             // Transform DB data to UI state
             const history: DailyMetric[] = (dbHistory || []).map(h => ({
@@ -325,7 +424,6 @@ export const useYouTubeData = () => {
             }));
 
             const topVideos: VideoStats[] = (dbVideos || []).map(v => {
-                // Get most recent snapshot
                 const latestSnap = v.content_snapshots?.sort((a: any, b: any) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())[0];
                 return {
                     id: v.external_id,
@@ -337,24 +435,32 @@ export const useYouTubeData = () => {
                     comments: latestSnap?.comments || 0
                 };
             });
+            
+            let overview = null;
+            if (dbSnapshot && dbSnapshot.raw_data) {
+                 // Try to reconstruct overview from snapshot
+                 overview = {
+                     totalViews: dbSnapshot.total_views?.toString() || "0",
+                     subscriberCount: dbSnapshot.follower_count?.toString() || "0",
+                     videoCount: dbSnapshot.media_count?.toString() || "0",
+                     channelName: "Cached Channel", // We might need to store this in connected_accounts
+                     customUrl: "",
+                     thumbnailUrl: ""
+                 };
+            }
 
-            // Note: Overview stats (Total Views/Subs) are not currently in a separate table in schema.sql
-            // We could fetch them from the latest `account_snapshots` if valid, or just estimate from history.
-            // For now, let's leave overview null or use placeholder if completely offline.
-            // Or better: update the schema.sql to store 'channel_stats' on connected_accounts. 
-            // Assuming for now overview might be missing in offline mode unless we persisted it.
-
-            setData({
+            return {
                 loading: false,
-                error: originalError ? `Loaded from Cache (Offline Mode). API Error: ${originalError}` : null,
-                overview: null, // Partial data limitation for now
+                error: originalError ? `Loaded from Cache. API Error: ${originalError}` : null,
+                overview,
                 history,
-                topVideos
-            });
+                topVideos,
+                insights
+            };
 
         } catch (dbErr) {
             console.error("Load from DB failed:", dbErr);
-            setData(prev => ({ ...prev, loading: false, error: 'Failed to load from API and DB. ' + originalError }));
+            return null;
         }
     };
 
