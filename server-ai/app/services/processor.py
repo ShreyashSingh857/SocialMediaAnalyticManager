@@ -34,6 +34,9 @@ class AnalyticsProcessor:
         # 3. Peak Performance Day
         peak_day = df.loc[df['views'].idxmax()]
 
+        # Convert date back to string for JSON serialization
+        df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+
         return {
             "summary": {
                 "trend_direction": trend_direction,
@@ -79,8 +82,18 @@ class AnalyticsProcessor:
         
         # Use simple insert
         try:
-            supabase.table("analytics_insights").insert(payload).execute()
+            print(f"--- SAVING INSIGHT: {insight_type} ---")
+            print(f"Data: {data}")
+            response = supabase.table("analytics_insights").insert(payload).execute()
+            print(f"Supabase Response: {response}")
             print(f"Saved {insight_type} insight for {self.account_id}")
         except Exception as e:
             print(f"Error saving insight: {e}")
+            # Print detailed error if available
+            if hasattr(e, 'details'):
+                 print(f"Details: {e.details}")
+            if hasattr(e, 'hint'):
+                 print(f"Hint: {e.hint}")
+            if hasattr(e, 'code'):
+                 print(f"Code: {e.code}")
 

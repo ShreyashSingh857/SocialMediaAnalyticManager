@@ -10,7 +10,7 @@ class ProcessRequest(BaseModel):
     history: List[Dict[str, Any]] # Daily metrics
     videos: List[Dict[str, Any]] # Video stats
 
-def run_processing(payload: ProcessRequest):
+async def run_processing(payload: ProcessRequest):
     processor = AnalyticsProcessor(payload.account_id)
     
     # 1. Process History
@@ -19,19 +19,27 @@ def run_processing(payload: ProcessRequest):
     # 2. Process Videos
     video_insights = processor.process_video_stats(payload.videos)
     
-    # 3. Save Results (Sync for now, can be async)
-    import asyncio
-    asyncio.run(processor.save_insights("weekly_trend", history_insights))
-    asyncio.run(processor.save_insights("engagement_summary", video_insights))
+    # 3. Save Results
+    await processor.save_insights("weekly_trend", history_insights)
+    await processor.save_insights("engagement_summary", video_insights)
+    
+    return {
+        "weekly_trend": history_insights,
+        "engagement_summary": video_insights
+    }
 
 @router.post("/process")
-async def process_analytics(request: ProcessRequest, background_tasks: BackgroundTasks):
+async def process_analytics(request: ProcessRequest):
     """
     Endpoint to trigger data processing.
-    Accepts raw data, processes it in background, and saves insights to DB.
+    Processes synchronously and returns results for debugging.
     """
     try:
-        background_tasks.add_task(run_processing, request)
-        return {"message": "Processing started", "status": "queued"}
+        results = await run_processing(request)
+        return {
+            "message": "Processing complete", 
+            "status": "success",
+            "data": results
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
