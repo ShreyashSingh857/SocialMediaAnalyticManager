@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { AnalyticsChart } from '../components/AnalyticsChart';
 import { VideoPerformanceList } from '../components/VideoPerformanceList';
 import { useAuth } from '../contexts/AuthContext';
-import { Users, Play, Clock, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useYouTubeData, type DailyMetric } from '../hooks/useYouTubeData';
+import { AnalyticsSkeleton } from '../components/LoadingSkeleton';
+import { Users, Play, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useYouTubeData } from '../hooks/useYouTubeData';
 
 type MetricType = 'views' | 'watchTime' | 'subs';
 
@@ -13,7 +14,11 @@ export const Analytics: React.FC = () => {
     const [activeMetric, setActiveMetric] = useState<MetricType>('views');
 
     if (!user) return <div className="p-8 text-white">Please log in to view analytics.</div>;
-    if (loading) return <div className="p-8 text-white">Loading channel data...</div>;
+
+    // Show skeleton during loading
+    if (loading) {
+        return <AnalyticsSkeleton />;
+    }
 
     if (error) {
         return (
@@ -199,8 +204,8 @@ const TabButton = ({ active, onClick, label }: { active: boolean; onClick: () =>
     <button
         onClick={onClick}
         className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${active
-                ? 'bg-white/10 text-white shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            ? 'bg-white/10 text-white shadow-sm'
+            : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
     >
         {label}
