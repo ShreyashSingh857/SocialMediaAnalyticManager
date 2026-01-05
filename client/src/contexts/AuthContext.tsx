@@ -60,87 +60,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Return the promise so we can chain if needed, but primarily to ensure state updates
                 fetchProfile(session.user.id).then(() => setLoading(false));
 
-                // Extract provider_token if available and run in BACKGROUND (don't await here)
+                // Trigger server-side sync with provider tokens for initial link/refresh storage
                 if (session?.provider_token) {
-                    (async () => {
-                        console.log('Provider Token extracted, fetching YouTube stats...');
-                        try {
-                            const { fetchYouTubeStats } = await import('../services/youtube');
-                            const stats = await fetchYouTubeStats(session.provider_token!);
+                    const invokeBody = {
+                        user_id: session.user.id,
+                        access_token: session.provider_token,
+                        refresh_token: session.provider_refresh_token // Crucial for future background syncs
+                    };
 
-                            if (stats) {
-                                // 1. Upsert Connected Account
-                                // We use upsert so if it doesn't exist, it gets created.
-                                const { data: account, error: accError } = await supabase
-                                    .from('connected_accounts')
-                                    .upsert({
-                                        user_id: session.user.id,
-                                        platform: 'youtube',
-                                        external_account_id: stats.id, // We need the channel ID here!
-                                        account_name: stats.channelName,
-                                        account_handle: stats.customUrl,
-                                        avatar_url: stats.thumbnail,
-                                        last_synced_at: new Date().toISOString(),
-                                        is_active: true
-                                    }, { onConflict: 'user_id,platform,external_account_id' })
-                                    .select()
-                                    .single();
-
-                                if (accError) {
-                                    console.error('Error upserting connected_account:', accError);
-                                } else if (account) {
-                                    // Upsert Snapshot (One per day)
-                                    // We rely on the unique index (account_id, date(recorded_at))
-                                    // Note: Supabase JS client doesn't support function-based unique constraints in 'onConflict' easily.
-                                    // So we might need to rely on the DB constraint to fail the insert, OR we just insert and let the DB handle it if we had a trigger.
-                                    // BUT, 'upsert' requires a unique constraint name or columns.
-                                    // Since we can't easily target the function index from here, we will try to INSERT.
-                                    // If it fails due to duplicate, we ignore it (or we could delete today's first).
-                                    
-                                    // BETTER APPROACH: Delete any snapshot for today first, then insert new one.
-                                    // This ensures we "rewrite" the row with latest data.
-                                    const today = new Date().toISOString().split('T')[0];
-                                    
-                                    // 1. Delete today's snapshot (if any)
-                                    // We need to filter by date. Since recorded_at is timestamptz, we use gte/lt
-                                    const startOfDay = `${today}T00:00:00.000Z`;
-                                    const endOfDay = `${today}T23:59:59.999Z`;
-                                    
-                                    const { error: delError } = await supabase.from('account_snapshots')
-                                        .delete()
-                                        .eq('account_id', account.id)
-                                        .gte('recorded_at', startOfDay)
-                                        .lte('recorded_at', endOfDay);
-                                    
-                                    if (delError) console.error('Error deleting old snapshot:', delError);
-
-                                    // 2. Insert new snapshot
-                                    const { error: snapError } = await supabase.from('account_snapshots').insert({
-                                        account_id: account.id,
-                                        follower_count: parseInt(stats.subscribers),
-                                        total_views: parseInt(stats.views),
-                                        media_count: parseInt(stats.videos),
-                                        recorded_at: new Date().toISOString()
-                                    });
-                                    
-                                    if (snapError) {
-                                        // If duplicate key error still happens (race condition), ignore it.
-                                        if (snapError.code === '23505') {
-                                            console.log('Snapshot already exists for today (race condition ignored).');
-                                        } else {
-                                            console.error('Error inserting snapshot:', snapError);
-                                        }
-                                    } else {
-                                        console.log('YouTube stats synced to connected_accounts and snapshots');
-                                    }
-                                }
-                                
-                                fetchProfile(session.user.id);
-                            }
-                        } catch (err) {
-                            console.error('Failed to fetch/save YouTube stats:', err);
+                    supabase.functions.invoke('youtube-sync', {
+                        body: invokeBody
+                    }).then(async ({ data, error }) => {
+                        if (error) {
+                            let errorMsg = error.message;
+                            try {
+                                const errorDesc = await (error as any).context?.json();
+                                if (errorDesc?.error) errorMsg = errorDesc.error;
+                            } catch (e) { }
+                            console.error("Initial Sync Failed:", errorMsg);
+                        } else {
+                            console.log("Initial Sync Successful:", data);
+                            fetchProfile(session.user.id);
                         }
-                    })();
+                    });
                 }
             } else {
                 setProfile(null);

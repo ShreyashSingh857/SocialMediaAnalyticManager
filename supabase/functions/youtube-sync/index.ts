@@ -7,137 +7,267 @@ const corsHeaders = {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+// Env Validation
+// @ts-ignore
+const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID") || Deno.env.get("YOUTUBE_CLIENT_ID");
+// @ts-ignore
+const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET") || Deno.env.get("YOUTUBE_CLIENT_SECRET");
+// @ts-ignore
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+// @ts-ignore
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+// @ts-ignore
+const AI_SERVICE_URL = Deno.env.get("AI_SERVICE_URL") || "http://localhost:8000";
+
+serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
     }
 
     try {
-        // 1. Parse Input
-        const { user_id } = await req.json();
-        if (!user_id) throw new Error("Missing user_id");
+        if (!GOOGLE_CLIENT_ID) throw new Error("Missing GOOGLE_CLIENT_ID");
+        if (!GOOGLE_CLIENT_SECRET) throw new Error("Missing GOOGLE_CLIENT_SECRET");
+        if (!SUPABASE_URL) throw new Error("Missing SUPABASE_URL");
+        if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
 
-        // 2. Initialize Admin Client (Bypass RLS)
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const body = await req.json().catch(() => ({}));
+        const { user_id, access_token: reqAccessToken, refresh_token: reqRefreshToken } = body;
 
-        // 3. Get User's YouTube Credentials
-        const { data: account, error: accountError } = await supabase
+        console.log(`Processing sync for user: ${user_id}`);
+        if (!user_id) throw new Error("Missing user_id in request body");
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+        let { data: account, error: accountError } = await supabase
             .from("connected_accounts")
             .select("*")
             .eq("user_id", user_id)
             .eq("platform", "youtube")
-            .single();
+            .maybeSingle();
 
-        if (accountError || !account) {
-            throw new Error("No YouTube account connected for this user");
+        if (accountError) throw new Error(`Database error fetching account: ${accountError.message}`);
+
+        let accessToken = reqAccessToken || account?.access_token;
+        let refreshToken = reqRefreshToken || account?.refresh_token;
+
+        // If no account exists but we have a token, we must "link" it now
+        if (!account && reqAccessToken) {
+            console.log("No account found in DB, performing initial link with provided access_token...");
+            const tempHeaders = { Authorization: `Bearer ${reqAccessToken}` };
+            const channelResp = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true`, { headers: tempHeaders });
+
+            if (!channelResp.ok) {
+                const errText = await channelResp.text();
+                throw new Error(`YouTube Channel API failed during linking: ${channelResp.status} ${errText}`);
+            }
+
+            const channelData = await channelResp.json();
+            const channel = channelData.items?.[0];
+
+            if (channel) {
+                console.log(`Linking YouTube channel: ${channel.snippet.title} (${channel.id})`);
+                const { data: newAccount, error: createError } = await supabase
+                    .from("connected_accounts")
+                    .upsert({
+                        user_id,
+                        platform: "youtube",
+                        external_account_id: channel.id,
+                        account_name: channel.snippet.title,
+                        account_handle: channel.snippet.customUrl,
+                        avatar_url: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.default?.url,
+                        access_token: reqAccessToken,
+                        refresh_token: reqRefreshToken,
+                        token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+                        is_active: true
+                    }, { onConflict: 'user_id,platform,external_account_id' })
+                    .select()
+                    .single();
+
+                if (createError) throw new Error(`Failed to create/update connected_account: ${createError.message}`);
+                account = newAccount;
+            } else {
+                throw new Error("No YouTube channel found for the provided access token.");
+            }
+        } else if (account && reqRefreshToken && reqRefreshToken !== account.refresh_token) {
+            console.log("Updating stored refresh_token...");
+            await supabase.from("connected_accounts").update({ refresh_token: reqRefreshToken }).eq("id", account.id);
         }
 
-        const accessToken = account.access_token;
-        // NOTE: In a real prod app, you'd check `token_expires_at` and refresh if needed here.
+        if (!account) {
+            console.warn(`Sync failed: No YouTube account found for user ${user_id} and no access_token provided.`);
+            throw new Error("No YouTube account connected. Please sign in with Google again.");
+        }
 
-        // 4. Resolve "Uploads" Playlist ID
-        let uploadsPlaylistId = account.platform_metadata?.uploads_playlist_id;
+        // --- TOKEN REFRESH LOGIC ---
+        const expiresAt = account.token_expires_at;
+        const isExpired = expiresAt ? new Date(expiresAt).getTime() < Date.now() + 300000 : true; // 5 min buffer
 
-        if (!uploadsPlaylistId) {
-            console.log("Fetching uploads playlist ID...");
-            const channelResp = await fetch(
-                `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true`,
-                { headers: { Authorization: `Bearer ${accessToken}` } }
-            );
-            const channelData = await channelResp.json();
+        if ((isExpired || !accessToken) && account.refresh_token) {
+            console.log("Access token expired or missing. Refreshing...");
+            const refreshResp = await fetch("https://oauth2.googleapis.com/token", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    client_id: GOOGLE_CLIENT_ID,
+                    client_secret: GOOGLE_CLIENT_SECRET,
+                    refresh_token: account.refresh_token,
+                    grant_type: "refresh_token",
+                }),
+            });
 
-            if (!channelResp.ok) throw new Error(`YouTube API Error (Channel): ${JSON.stringify(channelData)}`);
+            const refreshData = await refreshResp.json();
+            if (refreshResp.ok) {
+                accessToken = refreshData.access_token;
+                const newExpiresAt = new Date(Date.now() + refreshData.expires_in * 1000).toISOString();
+                console.log("Token refreshed successfully.");
 
-            uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-
-            if (uploadsPlaylistId) {
-                // Save it for future efficiency
                 await supabase
                     .from("connected_accounts")
                     .update({
-                        platform_metadata: { ...account.platform_metadata, uploads_playlist_id: uploadsPlaylistId }
+                        access_token: accessToken,
+                        token_expires_at: newExpiresAt
                     })
                     .eq("id", account.id);
             } else {
-                throw new Error("Could not find uploads playlist");
+                console.error("Failed to refresh token:", refreshData);
+                // If refresh token is invalid (e.g. revoked), we might want to tell the user to re-auth
+                if (refreshData.error === 'invalid_grant') {
+                    throw new Error("YouTube session expired. Please sign in with Google again.");
+                }
             }
         }
 
-        // 5. Fetch Latest Videos from Playlist
-        console.log(`Fetching videos from playlist ${uploadsPlaylistId}...`);
-        const videosResp = await fetch(
-            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=10`,
-            { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const videosData = await videosResp.json();
+        if (!accessToken) throw new Error("Could not obtain a valid YouTube access token.");
+        const headers = { Authorization: `Bearer ${accessToken}` };
 
-        if (!videosResp.ok) throw new Error(`YouTube API Error (Playlist): ${JSON.stringify(videosData)}`);
+        // 4. Fetch Channel Details (Overview)
+        console.log("Fetching channel statistics from YouTube...");
+        const channelResp = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&mine=true`, { headers });
+        if (!channelResp.ok) {
+            const err = await channelResp.json().catch(() => ({}));
+            throw new Error(`YouTube API Error (Channel): ${channelResp.status} ${JSON.stringify(err)}`);
+        }
 
-        const videoIds = videosData.items.map((item: any) => item.contentDetails.videoId);
+        const channelData = await channelResp.json();
+        const channelItem = channelData.items?.[0];
+        if (!channelItem) throw new Error("No YouTube channel found for this account.");
 
-        // 6. Fetch Video Statistics
-        console.log(`Fetching stats for ${videoIds.length} videos...`);
-        const statsResp = await fetch(
-            `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet,contentDetails&id=${videoIds.join(",")}`,
-            { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const statsData = await statsResp.json();
+        // Upsert Account Snapshot
+        console.log("Recording account snapshot...");
+        await supabase.from('account_snapshots').insert({
+            account_id: account.id,
+            follower_count: parseInt(channelItem.statistics.subscriberCount) || 0,
+            total_views: parseInt(channelItem.statistics.viewCount) || 0,
+            media_count: parseInt(channelItem.statistics.videoCount) || 0,
+            recorded_at: new Date().toISOString()
+        });
 
-        if (!statsResp.ok) throw new Error(`YouTube API Error (Stats): ${JSON.stringify(statsData)}`);
+        // 5. Fetch Analytics Report (Last 30 Days)
+        console.log("Fetching YouTube Analytics reports...");
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const analyticsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,subscribersGained&dimensions=day&sort=day`;
 
-        // 7. Process & Upsert Data
-        const results = [];
-
-        for (const item of statsData.items) {
-            // A. Upsert Content Item
-            const { data: contentItem, error: itemError } = await supabase
-                .from("content_items")
-                .upsert({
+        const analyticsResp = await fetch(analyticsUrl, { headers });
+        if (!analyticsResp.ok) {
+            const err = await analyticsResp.json().catch(() => ({}));
+            console.warn("YouTube Analytics API failed. Skipping daily metrics sync.", err);
+        } else {
+            const analyticsJson = await analyticsResp.json();
+            if (analyticsJson.rows) {
+                console.log(`Processing ${analyticsJson.rows.length} rows of analytics data...`);
+                const dailyMetrics = analyticsJson.rows.map((row: any[]) => ({
                     account_id: account.id,
-                    external_id: item.id,
-                    title: item.snippet.title,
-                    description: item.snippet.description,
-                    url: `https://www.youtube.com/watch?v=${item.id}`,
-                    thumbnail_url: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
-                    published_at: item.snippet.publishedAt,
-                    type: "video",
-                    static_metadata: {
-                        duration: item.contentDetails.duration,
-                        channelTitle: item.snippet.channelTitle
-                    }
-                }, { onConflict: "account_id, external_id" })
-                .select()
-                .single();
+                    date: row[0],
+                    views: row[1],
+                    watch_time_hours: parseFloat((row[2] / 60).toFixed(1)),
+                    subscribers_gained: row[3]
+                }));
 
-            if (itemError) {
-                console.error(`Error saving item ${item.id}:`, itemError);
-                continue;
+                await supabase.from('channel_daily_metrics').upsert(dailyMetrics, { onConflict: 'account_id,date' });
             }
-
-            // B. Insert Snapshot
-            const { error: snapError } = await supabase
-                .from("content_snapshots")
-                .insert({
-                    content_id: contentItem.id,
-                    views: parseInt(item.statistics.viewCount || "0"),
-                    likes: parseInt(item.statistics.likeCount || "0"),
-                    comments: parseInt(item.statistics.commentCount || "0"),
-                    engagement_rate: 0, // Calculate if desired
-                    raw_data: item.statistics // Save raw stats just in case
-                });
-
-            if (snapError) console.error(`Error saving snapshot for ${item.id}:`, snapError);
-
-            results.push({ id: item.id, title: item.snippet.title });
         }
 
-        return new Response(JSON.stringify({ success: true, processed: results.length, data: results }), {
+        // 6. Fetch Latest Videos
+        console.log("Syncing latest videos...");
+        const uploadsPlaylistId = channelItem.contentDetails.relatedPlaylists.uploads;
+        const pItemsResp = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=10`, { headers });
+
+        if (!pItemsResp.ok) {
+            const err = await pItemsResp.json().catch(() => ({}));
+            console.warn("YouTube Playlist API failed. Skipping video sync.", err);
+        } else {
+            const pItemsData = await pItemsResp.json();
+            const videoIds = pItemsData.items?.map((item: any) => item.contentDetails.videoId) || [];
+
+            if (videoIds.length > 0) {
+                const statsResp = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoIds.join(",")}`, { headers });
+
+                if (statsResp.ok) {
+                    const statsData = await statsResp.json();
+                    console.log(`Updating ${statsData.items?.length} videos...`);
+                    for (const item of statsData.items) {
+                        const { data: contentItem, error: itemError } = await supabase
+                            .from("content_items")
+                            .upsert({
+                                account_id: account.id,
+                                external_id: item.id,
+                                title: item.snippet.title,
+                                thumbnail_url: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
+                                published_at: item.snippet.publishedAt,
+                                type: "video"
+                            }, { onConflict: "account_id, external_id" })
+                            .select()
+                            .single();
+
+                        if (!itemError && contentItem) {
+                            await supabase.from("content_snapshots").insert({
+                                content_id: contentItem.id,
+                                views: parseInt(item.statistics.viewCount || "0"),
+                                likes: parseInt(item.statistics.likeCount || "0"),
+                                comments: parseInt(item.statistics.commentCount || "0"),
+                                recorded_at: new Date().toISOString()
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 7. Trigger AI Processing
+        console.log("Triggering AI Processing...");
+        // Re-fetch fresh data for AI
+        const { data: history } = await supabase.from('channel_daily_metrics').select('date, views, watch_time_hours, subscribers_gained').eq('account_id', account.id).order('date', { ascending: true });
+        const { data: videos } = await supabase.from('content_items').select('external_id, title, content_snapshots(views, likes, comments)').eq('account_id', account.id);
+
+        const processedVideos = videos?.map((v: any) => ({
+            id: v.external_id,
+            title: v.title,
+            views: v.content_snapshots?.[0]?.views || 0,
+            likes: v.content_snapshots?.[0]?.likes || 0,
+            comments: v.content_snapshots?.[0]?.comments || 0
+        })) || [];
+
+        try {
+            await fetch(`${AI_SERVICE_URL}/api/v1/analytics/process`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    account_id: account.id,
+                    history: history || [],
+                    videos: processedVideos
+                })
+            });
+            console.log("AI Processing triggered successfully.");
+        } catch (aiErr) {
+            console.error("Failed to trigger AI Service:", aiErr);
+        }
+
+        return new Response(JSON.stringify({ success: true, channel: channelItem.snippet.title }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
         return new Response(JSON.stringify({ error: error.message }), {
             status: 400,
