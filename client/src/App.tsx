@@ -12,6 +12,7 @@ import PublicRoute from './components/PublicRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
 import { Analytics } from './pages/Analytics';
+import { Audience } from './pages/Audience';
 
 import SidebarLayout from './components/SidebarLayout';
 
@@ -35,6 +36,7 @@ function App() {
               <Route path="/social-connect" element={<SocialConnect />} />
               <Route path="/profile-setup" element={<ProfileSetup />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/audience" element={<Audience />} />
               <Route path="/" element={<Dashboard />} />
             </Route>
           </Route>
