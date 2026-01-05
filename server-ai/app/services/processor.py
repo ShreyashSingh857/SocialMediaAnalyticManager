@@ -7,6 +7,53 @@ class AnalyticsProcessor:
     def __init__(self, account_id: str):
         self.account_id = account_id
 
+    def fetch_history(self, days: int = 30) -> List[Dict[str, Any]]:
+        """Fetch daily metrics from Supabase."""
+        try:
+            response = supabase.table("channel_daily_metrics") \
+                .select("*") \
+                .eq("account_id", self.account_id) \
+                .order("date", desc=True) \
+                .limit(days) \
+                .execute()
+            
+            # Return reversed to be in chronological order for processing
+            return list(reversed(response.data)) if response.data else []
+        except Exception as e:
+            print(f"Error fetching history: {e}")
+            return []
+
+    def fetch_video_stats(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Fetch video stats from Supabase."""
+        try:
+            # Fetch videos with their latest snapshot
+            response = supabase.table("content_items") \
+                .select("id, title, content_snapshots(views, likes, comments, recorded_at)") \
+                .eq("account_id", self.account_id) \
+                .eq("type", "video") \
+                .order("published_at", desc=True) \
+                .limit(limit) \
+                .execute()
+            
+            videos = []
+            if response.data:
+                for item in response.data:
+                    snapshots = item.get("content_snapshots", [])
+                    if snapshots:
+                        # Sort by recorded_at desc to get latest
+                        latest = sorted(snapshots, key=lambda x: x['recorded_at'], reverse=True)[0]
+                        videos.append({
+                            "id": item["id"],
+                            "title": item["title"],
+                            "views": latest.get("views", 0),
+                            "likes": latest.get("likes", 0),
+                            "comments": latest.get("comments", 0)
+                        })
+            return videos
+        except Exception as e:
+            print(f"Error fetching videos: {e}")
+            return []
+
     def process_daily_metrics(self, history: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Process daily metrics to find trends.
