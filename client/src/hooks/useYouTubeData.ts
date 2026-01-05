@@ -196,7 +196,11 @@ export const useYouTubeData = () => {
             }
 
             const { data: syncResult, error: syncError } = await supabase.functions.invoke('youtube-sync', {
-                body: { user_id: userId }
+                body: {
+                    user_id: userId,
+                    access_token: currentSession.provider_token,
+                    refresh_token: currentSession.provider_refresh_token
+                }
             });
 
             if (syncError) {
@@ -214,7 +218,30 @@ export const useYouTubeData = () => {
             }
 
             console.log("Sync Complete:", syncResult);
-            // 3. Re-fetch from DB after sync
+
+            // 3. Trigger AI Processing
+            try {
+                console.log("Triggering AI Analysis...");
+                const { data: account } = await supabase
+                    .from('connected_accounts')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .eq('platform', 'youtube')
+                    .maybeSingle();
+
+                if (account) {
+                    await fetch('http://127.0.0.1:8000/api/v1/analytics/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ account_id: account.id })
+                    });
+                    console.log("AI Analysis Triggered");
+                }
+            } catch (aiErr) {
+                console.error("AI Trigger Failed:", aiErr);
+            }
+
+            // 4. Re-fetch from DB after sync
             const freshData = await loadFromDB(userId);
             if (freshData) {
                 setData(prev => ({ ...prev, ...freshData, loading: false }));

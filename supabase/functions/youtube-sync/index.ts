@@ -234,34 +234,8 @@ serve(async (req: Request) => {
             }
         }
 
-        // 7. Trigger AI Processing
-        console.log("Triggering AI Processing...");
-        // Re-fetch fresh data for AI
-        const { data: history } = await supabase.from('channel_daily_metrics').select('date, views, watch_time_hours, subscribers_gained').eq('account_id', account.id).order('date', { ascending: true });
-        const { data: videos } = await supabase.from('content_items').select('external_id, title, content_snapshots(views, likes, comments)').eq('account_id', account.id);
-
-        const processedVideos = videos?.map((v: any) => ({
-            id: v.external_id,
-            title: v.title,
-            views: v.content_snapshots?.[0]?.views || 0,
-            likes: v.content_snapshots?.[0]?.likes || 0,
-            comments: v.content_snapshots?.[0]?.comments || 0
-        })) || [];
-
-        try {
-            await fetch(`${AI_SERVICE_URL}/api/v1/analytics/process`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    account_id: account.id,
-                    history: history || [],
-                    videos: processedVideos
-                })
-            });
-            console.log("AI Processing triggered successfully.");
-        } catch (aiErr) {
-            console.error("Failed to trigger AI Service:", aiErr);
-        }
+        // 7. (Optional) AI Trigger - Removed to use Frontend Trigger
+        // The frontend now triggers the AI service directly to ensure valid network reachability (localhost vs cloud).
 
         return new Response(JSON.stringify({ success: true, channel: channelItem.snippet.title }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },

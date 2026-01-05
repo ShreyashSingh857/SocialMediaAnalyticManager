@@ -78,6 +78,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                 if (errorDesc?.error) errorMsg = errorDesc.error;
                             } catch (e) { }
                             console.error("Initial Sync Failed:", errorMsg);
+
+                            // FALLBACK: Client-side linking if server function is outdated
+                            if (errorMsg.includes("No YouTube account") || errorMsg.includes("400")) {
+                                console.log("Attempting client-side account linking...");
+                                try {
+                                    // 1. Fetch Channel Info
+                                    const channelResp = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true`, {
+                                        headers: { Authorization: `Bearer ${session.provider_token}` }
+                                    });
+                                    
+                                    if (channelResp.ok) {
+                                        const channelData = await channelResp.json();
+                                        const channel = channelData.items?.[0];
+                                        
+                                        if (channel) {
+                                            // 2. Insert into Supabase
+                                            const { error: dbError } = await supabase
+                                                .from("connected_accounts")
+                                                .upsert({
+                                                    user_id: session.user.id,
+                                                    platform: "youtube",
+                                                    external_account_id: channel.id,
+                                                    account_name: channel.snippet.title,
+                                                    account_handle: channel.snippet.customUrl,
+                                                    avatar_url: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.default?.url,
+                                                    access_token: session.provider_token,
+                                                    refresh_token: session.provider_refresh_token,
+                                                    token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+                                                    is_active: true
+                                                }, { onConflict: 'user_id,platform,external_account_id' });
+
+                                            if (dbError) {
+                                                console.error("Client-side linking failed:", dbError);
+                                            } else {
+                                                console.log("Client-side linking successful!");
+                                                fetchProfile(session.user.id);
+                                            }
+                                        }
+                                    }
+                                } catch (fallbackErr) {
+                                    console.error("Client-side fallback error:", fallbackErr);
+                                }
+                            }
                         } else {
                             console.log("Initial Sync Successful:", data);
                             fetchProfile(session.user.id);

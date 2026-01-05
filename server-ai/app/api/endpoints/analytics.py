@@ -12,21 +12,24 @@ router = APIRouter()
 
 class ProcessRequest(BaseModel):
     account_id: str
-    history: List[Dict[str, Any]] # Daily metrics
-    videos: List[Dict[str, Any]] # Video stats
+    # history/videos removed as we now fetch them internally
 
 async def run_processing(payload: ProcessRequest):
     try:
         logger.info(f"Starting analytics processing for account: {payload.account_id}")
         processor = AnalyticsProcessor(payload.account_id)
         
-        # 1. Process History
-        history_insights = processor.process_daily_metrics(payload.history)
+        # 1. Fetch Data
+        history = processor.fetch_history()
+        videos = processor.fetch_video_stats()
         
-        # 2. Process Videos
-        video_insights = processor.process_video_stats(payload.videos)
+        # 2. Process History
+        history_insights = processor.process_daily_metrics(history)
         
-        # 3. Save Results
+        # 3. Process Videos
+        video_insights = processor.process_video_stats(videos)
+        
+        # 4. Save Results
         await processor.save_insights("weekly_trend", history_insights)
         await processor.save_insights("engagement_summary", video_insights)
         
@@ -35,16 +38,16 @@ async def run_processing(payload: ProcessRequest):
         logger.error(f"Error processing analytics for {payload.account_id}: {str(e)}")
 
 @router.post("/process")
-async def process_analytics(request: ProcessRequest, background_tasks: BackgroundTasks):
+async def process_analytics(request: ProcessRequest):
     """
-    Endpoint to trigger data processing asynchronously.
+    Endpoint to trigger data processing synchronously (for now).
     """
     try:
         logger.info(f"Received processing request for account: {request.account_id}")
-        background_tasks.add_task(run_processing, request)
+        await run_processing(request)
         return {
-            "message": "Processing started in background", 
-            "status": "accepted",
+            "message": "Processing completed", 
+            "status": "completed",
             "account_id": request.account_id
         }
     except Exception as e:
