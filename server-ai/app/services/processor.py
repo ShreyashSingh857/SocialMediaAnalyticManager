@@ -81,6 +81,27 @@ class AnalyticsProcessor:
         # 3. Peak Performance Day
         peak_day = df.loc[df['views'].idxmax()]
 
+        # --- NEW METRICS ---
+        
+        # 4. Average View Duration (AVD) (Hours * 60 / Views)
+        # Avoid division by zero
+        total_views_period = df['views'].sum()
+        total_watch_hours = df.get('watch_time_hours', pd.Series([0]*len(df))).sum()
+        avd_minutes = (total_watch_hours * 60) / total_views_period if total_views_period > 0 else 0
+        
+        # 5. Subscriber Conversion Rate (Subs / Views * 100)
+        total_subs_gained = df.get('subscribers_gained', pd.Series([0]*len(df))).sum()
+        sub_conversion_rate = (total_subs_gained / total_views_period * 100) if total_views_period > 0 else 0
+
+        # 6. Momentum (Week over Week growth)
+        # Last 7 days vs Previous 7 days
+        if len(df) >= 14:
+            curr_week_views = df['views'].tail(7).sum()
+            prev_week_views = df['views'].iloc[-14:-7].sum()
+            momentum = ((curr_week_views - prev_week_views) / prev_week_views * 100) if prev_week_views > 0 else 0
+        else:
+            momentum = 0
+
         # Convert date back to string for JSON serialization
         df['date'] = df['date'].dt.strftime('%Y-%m-%d')
 
@@ -89,7 +110,11 @@ class AnalyticsProcessor:
                 "trend_direction": trend_direction,
                 "trend_slope": round(float(slope), 2),
                 "peak_date": peak_day['date'].strftime('%Y-%m-%d'),
-                "peak_views": int(peak_day['views'])
+                "peak_views": int(peak_day['views']),
+                # New Fields
+                "avd_minutes": round(float(avd_minutes), 2),
+                "sub_conversion_rate": round(float(sub_conversion_rate), 4),
+                "momentum_percent": round(float(momentum), 2)
             },
             "rolling_averages": df[['date', 'views_7d_avg']].tail(30).to_dict(orient='records')
         }

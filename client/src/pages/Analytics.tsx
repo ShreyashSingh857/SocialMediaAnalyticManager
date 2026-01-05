@@ -130,41 +130,56 @@ export const Analytics: React.FC = () => {
                     {/* AI Insights Section */}
                     {insights && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                            {/* Growth Card */}
                             <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
                                     <TrendingUp size={100} className="text-blue-500" />
                                 </div>
-                                <h3 className="text-gray-400 text-sm font-medium mb-4">Weekly Trend</h3>
-                                <div className="relative z-10">
-                                    <div className="flex items-baseline gap-2 mb-2">
-                                        <span className={`text-2xl font-bold ${insights.weeklyTrend?.summary.trend_direction === 'up' ? 'text-green-400' : insights.weeklyTrend?.summary.trend_direction === 'down' ? 'text-red-400' : 'text-gray-400'}`}>
-                                            {insights.weeklyTrend?.summary.trend_direction.toUpperCase()}
-                                        </span>
-                                        <span className="text-sm text-gray-500">
-                                            (Slope: {insights.weeklyTrend?.summary.trend_slope})
-                                        </span>
+                                <h3 className="text-gray-400 text-sm font-medium mb-4">Growth Momentum</h3>
+                                <div className="relative z-10 space-y-4">
+                                    <div>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className={`text-3xl font-bold ${(insights.weeklyTrend?.summary.momentum_percent || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                {insights.weeklyTrend?.summary.momentum_percent || 0}%
+                                            </span>
+                                            <span className="text-xs text-gray-500 uppercase">Week-over-Week</span>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-gray-400">
-                                        Peak Views: <span className="text-white font-medium">{insights.weeklyTrend?.summary.peak_views.toLocaleString()}</span> on {insights.weeklyTrend?.summary.peak_date}
-                                    </p>
+                                    <div>
+                                        <p className="text-sm text-gray-400">
+                                            Slope: <span className="text-white">{insights.weeklyTrend?.summary.trend_slope}</span>
+                                        </p>
+                                        <p className="text-sm text-gray-400">
+                                            Peak: <span className="text-white">{insights.weeklyTrend?.summary.peak_views.toLocaleString()}</span> views
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
+                            {/* Quality Card */}
                             <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <Users size={100} className="text-purple-500" />
+                                    <Clock size={100} className="text-purple-500" />
                                 </div>
-                                <h3 className="text-gray-400 text-sm font-medium mb-4">Engagement</h3>
-                                <div className="relative z-10">
-                                    <div className="text-3xl font-bold text-white mb-2">
-                                        {insights.engagement?.average_engagement_rate}%
+                                <h3 className="text-gray-400 text-sm font-medium mb-4">Content Quality</h3>
+                                <div className="relative z-10 grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="text-2xl font-bold text-white mb-1">
+                                            {insights.weeklyTrend?.summary.avd_minutes}m
+                                        </div>
+                                        <p className="text-xs text-gray-500">Avg View Duration</p>
                                     </div>
-                                    <p className="text-sm text-gray-500 mb-4">Avg. Engagement Rate</p>
-                                    <div className="space-y-2">
-                                        <p className="text-xs text-gray-400 uppercase tracking-wider">Top Performer</p>
-                                        <p className="text-sm text-white truncate">
-                                            {insights.engagement?.top_engaged_videos[0]?.title || 'N/A'}
-                                        </p>
+                                    <div>
+                                        <div className="text-2xl font-bold text-white mb-1">
+                                            {insights.weeklyTrend?.summary.sub_conversion_rate}%
+                                        </div>
+                                        <p className="text-xs text-gray-500">Sub Conversion</p>
+                                    </div>
+                                    <div className="col-span-2 pt-2 border-t border-white/5">
+                                        <div className="text-xl font-bold text-white mb-1">
+                                            {insights.engagement?.average_engagement_rate}%
+                                        </div>
+                                        <p className="text-xs text-gray-500">Avg Engagement Rate</p>
                                     </div>
                                 </div>
                             </div>
@@ -199,8 +214,8 @@ const TabButton = ({ active, onClick, label }: { active: boolean; onClick: () =>
     <button
         onClick={onClick}
         className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${active
-                ? 'bg-white/10 text-white shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            ? 'bg-white/10 text-white shadow-sm'
+            : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
     >
         {label}

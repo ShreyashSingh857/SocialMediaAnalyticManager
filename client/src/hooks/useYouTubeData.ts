@@ -34,6 +34,9 @@ export interface AIInsights {
             trend_slope: number;
             peak_date: string;
             peak_views: number;
+            avd_minutes: number;
+            sub_conversion_rate: number;
+            momentum_percent: number;
         };
         rolling_averages: { date: string; views_7d_avg: number }[];
     };
