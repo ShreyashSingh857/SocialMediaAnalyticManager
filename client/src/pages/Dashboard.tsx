@@ -1,5 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useYouTubeData } from '../hooks/useYouTubeData';
+import { DashboardSkeleton } from '../components/LoadingSkeleton';
+import { RefreshIndicator } from '../components/RefreshIndicator';
 import { motion } from 'framer-motion';
 import {
     Instagram,
@@ -9,7 +11,12 @@ import {
 
 const Dashboard = () => {
     const { profile } = useAuth();
-    const { overview, loading } = useYouTubeData();
+    const { overview, loading, refetch } = useYouTubeData();
+
+    // Show skeleton during loading
+    if (loading) {
+        return <DashboardSkeleton />;
+    }
 
     const stats = [
         {
@@ -46,10 +53,13 @@ const Dashboard = () => {
                     </h1>
                     <p className="text-gray-400">Here's what's happening with your content today.</p>
                 </div>
-                <div className="hidden sm:block">
-                    <div className="text-right">
-                        <p className="text-sm text-gray-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-                    </div>
+                <div className="hidden sm:flex flex-col items-end gap-2">
+                    <p className="text-sm text-gray-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                    <RefreshIndicator
+                        isRefreshing={loading}
+                        lastUpdated={new Date()}
+                        onRefresh={refetch}
+                    />
                 </div>
             </motion.header>
 
