@@ -7,7 +7,7 @@ class AnalyticsProcessor:
     def __init__(self, account_id: str):
         self.account_id = account_id
 
-    def fetch_history(self, days: int = 30) -> List[Dict[str, Any]]:
+    def fetch_history(self, days: int = 90) -> List[Dict[str, Any]]:
         """Fetch daily metrics from Supabase."""
         try:
             response = supabase.table("channel_daily_metrics") \
@@ -81,6 +81,27 @@ class AnalyticsProcessor:
         # 3. Peak Performance Day
         peak_day = df.loc[df['views'].idxmax()]
 
+        # --- NEW METRICS ---
+        
+        # 4. Average View Duration (AVD) (Hours * 60 / Views)
+        # Avoid division by zero
+        total_views_period = df['views'].sum()
+        total_watch_hours = df.get('watch_time_hours', pd.Series([0]*len(df))).sum()
+        avd_minutes = (total_watch_hours * 60) / total_views_period if total_views_period > 0 else 0
+        
+        # 5. Subscriber Conversion Rate (Subs / Views * 100)
+        total_subs_gained = df.get('subscribers_gained', pd.Series([0]*len(df))).sum()
+        sub_conversion_rate = (total_subs_gained / total_views_period * 100) if total_views_period > 0 else 0
+
+        # 6. Momentum (Week over Week growth)
+        # Last 7 days vs Previous 7 days
+        if len(df) >= 14:
+            curr_week_views = df['views'].tail(7).sum()
+            prev_week_views = df['views'].iloc[-14:-7].sum()
+            momentum = ((curr_week_views - prev_week_views) / prev_week_views * 100) if prev_week_views > 0 else 0
+        else:
+            momentum = 0
+
         # Convert date back to string for JSON serialization
         df['date'] = df['date'].dt.strftime('%Y-%m-%d')
 
@@ -89,9 +110,14 @@ class AnalyticsProcessor:
                 "trend_direction": trend_direction,
                 "trend_slope": round(float(slope), 2),
                 "peak_date": peak_day['date'].strftime('%Y-%m-%d'),
-                "peak_views": int(peak_day['views'])
+                "peak_views": int(peak_day['views']),
+                # New Fields
+                "avd_minutes": round(float(avd_minutes), 2),
+                "sub_conversion_rate": round(float(sub_conversion_rate), 4),
+                "momentum_percent": round(float(momentum), 2)
             },
-            "rolling_averages": df[['date', 'views_7d_avg']].tail(30).to_dict(orient='records')
+            "rolling_averages": df[['date', 'views_7d_avg']].tail(30).to_dict(orient='records'),
+            "day_of_week_analysis": self.analyze_day_of_week(history)
         }
 
     def process_video_stats(self, videos: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -112,8 +138,57 @@ class AnalyticsProcessor:
 
         return {
             "average_engagement_rate": round(float(avg_engagement), 2),
-            "top_engaged_videos": top_engaged[['id', 'title', 'engagement_rate']].to_dict(orient='records')
+            "top_engaged_videos": top_engaged[['id', 'title', 'engagement_rate']].to_dict(orient='records'),
+            "engagement_quality": self.analyze_engagement_quality(videos)
         }
+
+    def analyze_day_of_week(self, history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Analyze which day of the week gets the most views.
+        Output: [{'day': 'Monday', 'views': 1500}, ...]
+        """
+        if not history:
+            return []
+            
+        df = pd.DataFrame(history)
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # 0=Monday, 6=Sunday
+        df['day_index'] = df['date'].dt.dayofweek
+        df['day_name'] = df['date'].dt.day_name()
+        
+        # Calculate average views per day of week
+        daily_stats = df.groupby(['day_index', 'day_name'])['views'].mean().reset_index()
+        daily_stats = daily_stats.sort_values('day_index')
+        
+        return daily_stats[['day_name', 'views']].to_dict(orient='records')
+
+    def analyze_engagement_quality(self, videos: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Calculate metrics for Engagement Matrix (Likability vs Discussability)
+        """
+        if not videos:
+            return []
+            
+        processed = []
+        for v in videos:
+            views = v.get('views', 0)
+            if views > 100: # Filter low view videos for noise
+                # Likes per 1k views
+                likability = (v.get('likes', 0) / views) * 1000
+                # Comments per 1k views
+                discussability = (v.get('comments', 0) / views) * 1000
+                
+                processed.append({
+                    "id": v['id'],
+                    "title": v['title'],
+                    "views": views,
+                    "likability": round(likability, 2),
+                    "discussability": round(discussability, 2)
+                })
+        
+        # Return top 20 most viewed to avoid clutter
+        return sorted(processed, key=lambda x: x['views'], reverse=True)[:20]
 
     async def save_insights(self, insight_type: str, data: Dict[str, Any], start_date: str = None, end_date: str = None):
         """

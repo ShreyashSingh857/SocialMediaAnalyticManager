@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
-import SocialConnect from './pages/SocialConnect';
+import { Settings } from './pages/Settings';
 import Dashboard from './pages/Dashboard';
 import AuthCallback from './pages/AuthCallback';
 import ProfileSetup from './components/ProfileSetup';
@@ -11,10 +11,14 @@ import PublicRoute from './components/PublicRoute';
 
 import { AuthProvider } from './contexts/AuthContext';
 
-import { Analytics } from './pages/Analytics';
-import { Audience } from './pages/Audience';
+import { AnalyticsLayout } from './pages/analytics/AnalyticsLayout';
+import { AnalyticsOverview } from './pages/analytics/AnalyticsOverview';
+import { AnalyticsAudience } from './pages/analytics/AnalyticsAudience';
+import { AnalyticsContent } from './pages/analytics/AnalyticsContent';
+
 
 import SidebarLayout from './components/SidebarLayout';
+import { Navigate } from 'react-router-dom';
 
 function App() {
   return (
@@ -33,10 +37,19 @@ function App() {
           {/* Protected Routes - redirect to login if not logged in */}
           <Route element={<ProtectedRoute />}>
             <Route element={<SidebarLayout />}>
-              <Route path="/social-connect" element={<SocialConnect />} />
+              <Route path="/social-connect" element={<Settings />} /> {/* Redirect or Alias if needed, or just replace */}
+              <Route path="/settings" element={<Settings />} />
               <Route path="/profile-setup" element={<ProfileSetup />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/audience" element={<Audience />} />
+
+              {/* Nested Analytics Routes */}
+              <Route path="/analytics" element={<AnalyticsLayout />}>
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<AnalyticsOverview />} />
+                <Route path="audience" element={<AnalyticsAudience />} />
+                <Route path="content" element={<AnalyticsContent />} />
+              </Route>
+
+
               <Route path="/" element={<Dashboard />} />
             </Route>
           </Route>
