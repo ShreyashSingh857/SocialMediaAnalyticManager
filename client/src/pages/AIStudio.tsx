@@ -23,13 +23,13 @@ export const AIStudio: React.FC = () => {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Link to="/ai-studio/title-generator">
+                <Link to="/ai-studio/video-metadata">
                     <ToolCard
-                        title="Viral Title Generator"
-                        description="Generate click-worthy titles optimized for high CTR using advanced language models."
+                        title="Video Metadata Optimizer"
+                        description="Generate viral titles, SEO descriptions, and trending hashtags in one click."
                         icon={<PenTool className="w-6 h-6 text-blue-400" />}
                         color="blue"
-                        status="New"
+                        status="Updated"
                     />
                 </Link>
                 <Link to="/ai-studio/thumbnail-rater">
