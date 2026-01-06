@@ -2,7 +2,6 @@ import {
     LayoutDashboard,
     Settings,
     TrendingUp,
-    Users,
     LogOut
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
@@ -22,8 +21,8 @@ export const Sidebar = () => {
 
                 <nav className="flex-1 px-4 space-y-2 mt-8">
                     <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
-                    <NavItem to="/analytics" icon={TrendingUp} label="Analytics" />
-                    <NavItem to="/audience" icon={Users} label="Audience" />
+                    <NavItem to="/analytics/overview" icon={TrendingUp} label="Analytics" />
+
                     <NavItem to="/settings" icon={Settings} label="Settings" />
                 </nav>
 

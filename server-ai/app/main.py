@@ -26,3 +26,6 @@ from app.api.endpoints import analytics
 
 app.include_router(analytics.router, prefix=settings.API_V1_STR + "/analytics", tags=["analytics"])
 
+# Alias app to main to allow 'uvicorn app.main:main' to work
+main = app
+
