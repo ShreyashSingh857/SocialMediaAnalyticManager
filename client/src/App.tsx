@@ -3,6 +3,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import { Settings } from './pages/Settings';
+import { AIStudio } from './pages/AIStudio';
+import { TitleGenerator } from './pages/ai-tools/TitleGenerator';
 import Dashboard from './pages/Dashboard';
 import AuthCallback from './pages/AuthCallback';
 import ProfileSetup from './components/ProfileSetup';
@@ -49,7 +51,8 @@ function App() {
                 <Route path="content" element={<AnalyticsContent />} />
               </Route>
 
-
+              <Route path="/ai-studio" element={<AIStudio />} />
+              <Route path="/ai-studio/title-generator" element={<TitleGenerator />} />
               <Route path="/" element={<Dashboard />} />
             </Route>
           </Route>
