@@ -5,26 +5,28 @@ from typing import List
 
 router = APIRouter()
 
-class TitleRequest(BaseModel):
+class MetadataRequest(BaseModel):
     description: str
 
-class TitleResponse(BaseModel):
+class MetadataResponse(BaseModel):
     titles: List[str]
+    description: str
+    hashtags: List[str]
 
-@router.post("/generate-titles", response_model=TitleResponse)
-async def generate_titles(request: TitleRequest):
+@router.post("/generate-metadata", response_model=MetadataResponse)
+async def generate_metadata(request: MetadataRequest):
     """
-    Generate viral titles based on video description.
+    Generate titles, description, and hashtags.
     """
-    if len(request.description.split()) < 5:
-        raise HTTPException(status_code=400, detail="Description is too short. Please provide at least 5 words.")
+    if len(request.description.split()) < 3:
+        raise HTTPException(status_code=400, detail="Description is too short.")
         
-    titles = await ai_service.generate_viral_titles(request.description)
+    result = await ai_service.generate_video_metadata(request.description)
     
-    if titles and titles[0].startswith("Error"):
-         raise HTTPException(status_code=500, detail=titles[0])
+    if "error" in result:
+         raise HTTPException(status_code=500, detail=result["error"])
 
-    return TitleResponse(titles=titles)
+    return result
 
 @router.post("/analyze-thumbnail")
 async def analyze_thumbnail(file: UploadFile = File(...)):

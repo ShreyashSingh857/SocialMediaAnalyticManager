@@ -4,7 +4,7 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import { Settings } from './pages/Settings';
 import { AIStudio } from './pages/AIStudio';
-import { TitleGenerator } from './pages/ai-tools/TitleGenerator';
+import { VideoMetadata } from './pages/ai-tools/VideoMetadata';
 import { ThumbnailRater } from './pages/ai-tools/ThumbnailRater';
 import { ScriptAssistant } from './pages/ai-tools/ScriptAssistant';
 import Dashboard from './pages/Dashboard';
@@ -54,7 +54,7 @@ function App() {
               </Route>
 
               <Route path="/ai-studio" element={<AIStudio />} />
-              <Route path="/ai-studio/title-generator" element={<TitleGenerator />} />
+              <Route path="/ai-studio/video-metadata" element={<VideoMetadata />} />
               <Route path="/ai-studio/thumbnail-rater" element={<ThumbnailRater />} />
               <Route path="/ai-studio/script-assistant" element={<ScriptAssistant />} />
               <Route path="/" element={<Dashboard />} />

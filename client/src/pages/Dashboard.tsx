@@ -8,6 +8,7 @@ import {
     MoreHorizontal,
     MapPin
 } from 'lucide-react';
+import { TrendyContent } from '../components/dashboard/TrendyContent';
 
 const Dashboard = () => {
     const { profile } = useAuth();
@@ -85,10 +86,10 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
-                {/* Left Column (Profile & Details) */}
-                <div className="lg:col-span-2 space-y-8">
+                {/* Left Column (Analytics) */}
+                <div className="lg:col-span-3 space-y-8">
                     {/* Analytics Chart Placeholder */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -103,50 +104,64 @@ const Dashboard = () => {
                     </motion.div>
                 </div>
 
-                {/* Right Column (Profile Card) */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="p-6 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-md h-fit"
-                >
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-semibold">My Profile</h3>
-                        <button className="text-gray-400 hover:text-white" title="More options"><MoreHorizontal className="w-5 h-5" /></button>
-                    </div>
-
-                    <div className="flex flex-col items-center mb-6">
-                        <div className="w-24 h-24 rounded-full border-4 border-slate-900 overflow-hidden mb-4 shadow-xl">
-                            <img
-                                src={profile?.profile_photo_url || `https://ui-avatars.com/api/?name=${profile?.full_name}&background=random`}
-                                alt={profile?.full_name}
-                                className="w-full h-full object-cover"
-                            />
+                {/* Right Column (Sidebar Widgets) */}
+                <div className="lg:col-span-1 space-y-8">
+                    {/* Profile Card */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="p-6 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-md h-fit"
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="font-semibold">My Profile</h3>
+                            <button className="text-gray-400 hover:text-white" title="More options"><MoreHorizontal className="w-5 h-5" /></button>
                         </div>
-                        <h4 className="text-xl font-bold">{profile?.full_name}</h4>
-                        <p className="text-sm text-gray-400">{profile?.content_type} Creator</p>
-                    </div>
 
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
-                            <Instagram className="w-5 h-5 text-purple-400" />
-                            <span className="text-sm flex-1">{profile?.instagram || '@username'}</span>
-                            <span className="text-xs text-blue-400 cursor-pointer">Link</span>
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-24 h-24 rounded-full border-4 border-slate-900 overflow-hidden mb-4 shadow-xl">
+                                <img
+                                    src={profile?.profile_photo_url || `https://ui-avatars.com/api/?name=${profile?.full_name}&background=random`}
+                                    alt={profile?.full_name}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <h4 className="text-xl font-bold">{profile?.full_name}</h4>
+                            <p className="text-sm text-gray-400">{profile?.content_type} Creator</p>
                         </div>
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
-                            <MapPin className="w-5 h-5 text-blue-400" />
-                            <span className="text-sm">{profile?.location || 'Location not set'}</span>
-                        </div>
-                    </div>
 
-                    <div className="mt-6 pt-6 border-t border-white/10">
-                        <h5 className="text-sm font-medium mb-2 text-gray-400">Bio</h5>
-                        <p className="text-sm text-gray-300 leading-relaxed">
-                            {profile?.description || "No description provided."}
-                        </p>
-                    </div>
-                </motion.div>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
+                                <Instagram className="w-5 h-5 text-purple-400" />
+                                <span className="text-sm flex-1">{profile?.instagram || '@username'}</span>
+                                <span className="text-xs text-blue-400 cursor-pointer">Link</span>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
+                                <MapPin className="w-5 h-5 text-blue-400" />
+                                <span className="text-sm">{profile?.location || 'Location not set'}</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 pt-6 border-t border-white/10">
+                            <h5 className="text-sm font-medium mb-2 text-gray-400">Bio</h5>
+                            <p className="text-sm text-gray-300 leading-relaxed">
+                                {profile?.description || "No description provided."}
+                            </p>
+                        </div>
+                    </motion.div>
+
+                </div>
             </div>
+
+            {/* Trendy Content Widget (Full Width) */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-8"
+            >
+                <TrendyContent />
+            </motion.div>
         </div>
     );
 };

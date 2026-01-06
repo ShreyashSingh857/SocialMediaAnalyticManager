@@ -15,21 +15,29 @@ class AIGenerator:
             genai.configure(api_key=api_key)
             self.model = genai.GenerativeModel('gemini-flash-latest')
 
-    async def generate_viral_titles(self, description: str) -> List[str]:
+    async def generate_video_metadata(self, description: str) -> Dict[str, Any]:
         """
-        Generate 5 viral YouTube titles based on the description.
+        Generate viral titles, SEO description, and hashtags.
         """
         if not os.getenv("GEMINI_API_KEY"):
-            return ["Error: API Key not configured"]
+            return {"error": "API Key not configured"}
 
         prompt = f"""
         You are an expert YouTube strategist. 
-        I have a video with the following description:
+        I have a video with the following rough description/topic:
         "{description}"
 
-        Please generate 5 highly clickable, viral, but not clickbaity titles for this video.
-        They should be under 60 characters if possible.
-        Return ONLY a JSON array of strings. Example: ["Title 1", "Title 2", ...]
+        Please generate the following metadata:
+        1. 5 Viral Titles (High CTR, under 60 chars).
+        2. An SEO-optimized Video Description (2-3 paragraphs, engaging keywords).
+        3. 15-20 Relevant Hashtags (mixed broad and nice).
+
+        Return ONLY a JSON object with this exact structure:
+        {{
+            "titles": ["Title 1", "Title 2", ...],
+            "description": "Full video description...",
+            "hashtags": ["#tag1", "#tag2", ...]
+        }}
         Do not include markdown formatting like ```json.
         """
 
@@ -37,7 +45,7 @@ class AIGenerator:
             response = self.model.generate_content(prompt)
             text = response.text.strip()
             
-            # Clean up potential markdown code blocks
+            # Clean up potential markdown
             if text.startswith("```json"):
                 text = text[7:]
             if text.startswith("```"):
@@ -45,11 +53,10 @@ class AIGenerator:
             if text.endswith("```"):
                 text = text[:-3]
             
-            titles = json.loads(text.strip())
-            return titles
+            return json.loads(text.strip())
         except Exception as e:
-            print(f"Error generating titles: {e}")
-            return [f"Error generating titles: {str(e)}"]
+            print(f"Error generating metadata: {e}")
+            return {"error": str(e)}
 
     async def analyze_thumbnail(self, image_data: bytes, mime_type: str) -> Dict[str, Any]:
         """
