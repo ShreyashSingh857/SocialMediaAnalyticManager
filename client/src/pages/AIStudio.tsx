@@ -32,20 +32,24 @@ export const AIStudio: React.FC = () => {
                         status="New"
                     />
                 </Link>
-                <ToolCard
-                    title="Thumbnail Rater"
-                    description="Upload your thumbnail options and get AI-predicted performance scores."
-                    icon={<Image className="w-6 h-6 text-purple-400" />}
-                    color="purple"
-                    status="Coming Soon"
-                />
-                <ToolCard
-                    title="Script Assistant"
-                    description="Create engaging video scripts with hooks, body content, and call-to-actions."
-                    icon={<Video className="w-6 h-6 text-pink-400" />}
-                    color="pink"
-                    status="Coming Soon"
-                />
+                <Link to="/ai-studio/thumbnail-rater">
+                    <ToolCard
+                        title="Thumbnail Rater"
+                        description="Upload your thumbnail options and get AI-predicted performance scores."
+                        icon={<Image className="w-6 h-6 text-purple-400" />}
+                        color="purple"
+                        status="New"
+                    />
+                </Link>
+                <Link to="/ai-studio/script-assistant">
+                    <ToolCard
+                        title="Script Assistant"
+                        description="Create engaging video scripts with hooks, body content, and call-to-actions."
+                        icon={<Video className="w-6 h-6 text-pink-400" />}
+                        color="pink"
+                        status="New"
+                    />
+                </Link>
             </div>
         </div>
     );
