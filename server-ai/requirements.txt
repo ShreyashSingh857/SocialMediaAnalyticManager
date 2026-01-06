@@ -1,10 +1,8 @@
+google-generativeai
+python-dotenv
 fastapi
 uvicorn
-numpy
-pandas
-openai
-requests
-python-dotenv
 supabase
+pandas
+pydantic
 pydantic-settings
-
