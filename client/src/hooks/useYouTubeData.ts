@@ -34,18 +34,26 @@ export interface AIInsights {
             trend_slope: number;
             peak_date: string;
             peak_views: number;
-            avd_minutes: number;
-            sub_conversion_rate: number;
-            momentum_percent: number;
+            avd_minutes?: number;
+            sub_conversion_rate?: number;
         };
         rolling_averages: { date: string; views_7d_avg: number }[];
-        day_of_week_analysis: { day_name: string; views: number }[];
     };
     engagement?: {
         average_engagement_rate: number;
         top_engaged_videos: { id: string; title: string; engagement_rate: number }[];
-        engagement_quality: { id: string; title: string; views: number; likability: number; discussability: number }[];
+        engagement_quality?: { likability: number; discussability: number; video_id: string }[];
     };
+}
+
+export interface VideoComment {
+    id: string;
+    video_id: string;
+    author_name: string;
+    author_avatar: string;
+    text_display: string;
+    published_at: string;
+    like_count: number;
 }
 
 interface YouTubeDataState {
@@ -55,6 +63,8 @@ interface YouTubeDataState {
     history: DailyMetric[];
     topVideos: VideoStats[];
     insights: AIInsights | null;
+    comments: Record<string, VideoComment[]>;
+    debugInfo?: any;
 }
 
 export const useYouTubeData = () => {
@@ -64,7 +74,8 @@ export const useYouTubeData = () => {
         overview: null,
         history: [],
         topVideos: [],
-        insights: null
+        insights: null,
+        comments: {}
     });
 
     const loadInsightsFromDB = async (accountId: string) => {
@@ -125,6 +136,44 @@ export const useYouTubeData = () => {
                 .order('published_at', { ascending: false })
                 .limit(50);
 
+            // Load Comments (NEW)
+            const videoIds = dbVideos?.map(v => v.id) || [];
+            let commentsMap: Record<string, VideoComment[]> = {};
+
+            if (videoIds.length > 0) {
+                const { data: dbComments } = await supabase
+                    .from('video_comments')
+                    .select('*')
+                    .in('video_id', videoIds)
+                    .order('published_at', { ascending: false });
+
+                if (dbComments) {
+                    dbComments.forEach((c: any) => {
+                        // Map internal UUID back to external ID if needed, 
+                        // but CommentsList expects map keyed by EXTERNAL video ID usually? 
+                        // Wait, VideoStats uses external_id as 'id'. 
+                        // The 'video_comments' table stores 'video_id' which is the UUID from 'content_items'.
+                        // So we need to map content_item.id (UUID) -> content_item.external_id (YouTube ID).
+
+                        const video = dbVideos?.find(v => v.id === c.video_id);
+                        if (video && video.external_id) {
+                            if (!commentsMap[video.external_id]) {
+                                commentsMap[video.external_id] = [];
+                            }
+                            commentsMap[video.external_id].push({
+                                id: c.id,
+                                video_id: c.video_id,
+                                author_name: c.author_name,
+                                author_avatar: c.author_avatar,
+                                text_display: c.text_display,
+                                published_at: c.published_at,
+                                like_count: c.like_count
+                            });
+                        }
+                    });
+                }
+            }
+
             // Load AI Insights
             const insights = await loadInsightsFromDB(account.id);
 
@@ -166,7 +215,8 @@ export const useYouTubeData = () => {
                 overview,
                 history,
                 topVideos,
-                insights
+                insights,
+                comments: commentsMap
             };
 
         } catch (dbErr) {
@@ -223,30 +273,10 @@ export const useYouTubeData = () => {
             }
 
             console.log("Sync Complete:", syncResult);
+            // UPDATE STATE WITH DEBUG INFO
+            setData(prev => ({ ...prev, debugInfo: syncResult }));
 
-            // 3. Trigger AI Processing
-            try {
-                console.log("Triggering AI Analysis...");
-                const { data: account } = await supabase
-                    .from('connected_accounts')
-                    .select('id')
-                    .eq('user_id', userId)
-                    .eq('platform', 'youtube')
-                    .maybeSingle();
-
-                if (account) {
-                    await fetch('http://127.0.0.1:8000/api/v1/analytics/process', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ account_id: account.id })
-                    });
-                    console.log("AI Analysis Triggered");
-                }
-            } catch (aiErr) {
-                console.error("AI Trigger Failed:", aiErr);
-            }
-
-            // 4. Re-fetch from DB after sync
+            // 3. Re-fetch from DB after sync
             const freshData = await loadFromDB(userId);
             if (freshData) {
                 setData(prev => ({ ...prev, ...freshData, loading: false }));
