@@ -38,6 +38,10 @@ serve(async (req: Request) => {
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+        console.log(`[Debug] Processing sync for user: ${user_id}`);
+        if (!reqAccessToken) console.warn("[Debug] No access_token in request body");
+        if (!reqRefreshToken) console.warn("[Debug] No refresh_token in request body");
+
         let { data: account, error: accountError } = await supabase
             .from("connected_accounts")
             .select("*")
@@ -206,6 +210,10 @@ serve(async (req: Request) => {
                 if (statsResp.ok) {
                     const statsData = await statsResp.json();
                     console.log(`Updating ${statsData.items?.length} videos...`);
+
+                    let commentsSyncedCount = 0;
+                    const debugLogs: string[] = [];
+
                     for (const item of statsData.items) {
                         const { data: contentItem, error: itemError } = await supabase
                             .from("content_items")
@@ -221,6 +229,7 @@ serve(async (req: Request) => {
                             .single();
 
                         if (!itemError && contentItem) {
+                            // 1. Update Snapshots
                             await supabase.from("content_snapshots").insert({
                                 content_id: contentItem.id,
                                 views: parseInt(item.statistics.viewCount || "0"),
@@ -228,8 +237,64 @@ serve(async (req: Request) => {
                                 comments: parseInt(item.statistics.commentCount || "0"),
                                 recorded_at: new Date().toISOString()
                             });
+
+                            // 2. Sync Comments (New Logic)
+                            try {
+                                const commentsReqUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${item.id}&maxResults=10&order=relevance`;
+                                const commentsResp = await fetch(commentsReqUrl, { headers });
+
+                                if (commentsResp.ok) {
+                                    const commentsData = await commentsResp.json();
+                                    const comments = commentsData.items?.map((thread: any) => {
+                                        const topComment = thread.snippet.topLevelComment;
+                                        const snippet = topComment.snippet;
+                                        return {
+                                            id: topComment.id, // Correct ID location
+                                            video_id: contentItem.id, // Internal UUID
+                                            author_name: snippet.authorDisplayName,
+                                            author_avatar: snippet.authorProfileImageUrl,
+                                            text_display: snippet.textDisplay,
+                                            like_count: snippet.likeCount,
+                                            published_at: snippet.publishedAt,
+                                            updated_at: new Date().toISOString()
+                                        };
+                                    }) || [];
+
+                                    if (comments.length > 0) {
+                                        const { error: commentsError } = await supabase
+                                            .from("video_comments")
+                                            .upsert(comments, { onConflict: 'id' });
+
+                                        if (commentsError) {
+                                            debugLogs.push(`Video ${item.id}: DB Error - ${commentsError.message}`);
+                                        } else {
+                                            commentsSyncedCount += comments.length;
+                                            debugLogs.push(`Video ${item.id}: Synced ${comments.length} comments.`);
+                                        }
+                                    } else {
+                                        debugLogs.push(`Video ${item.id}: 0 comments found (API OK).`);
+                                    }
+                                } else {
+                                    const errText = await commentsResp.text();
+                                    debugLogs.push(`Video ${item.id}: API Error ${commentsResp.status} - ${errText}`);
+                                }
+                            } catch (commentErr: any) {
+                                debugLogs.push(`Video ${item.id}: Exception - ${commentErr.message}`);
+                            }
                         }
                     }
+
+                    return new Response(JSON.stringify({
+                        success: true,
+                        channel: channelItem.snippet.title,
+                        debug: {
+                            videos_processed: statsData.items.length,
+                            comments_synced: commentsSyncedCount,
+                            logs: debugLogs
+                        }
+                    }), {
+                        headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    });
                 }
             }
         }
@@ -237,7 +302,7 @@ serve(async (req: Request) => {
         // 7. (Optional) AI Trigger - Removed to use Frontend Trigger
         // The frontend now triggers the AI service directly to ensure valid network reachability (localhost vs cloud).
 
-        return new Response(JSON.stringify({ success: true, channel: channelItem.snippet.title }), {
+        return new Response(JSON.stringify({ success: true, channel: channelItem.snippet.title, message: "No videos found or playlist API failed" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 

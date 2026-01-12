@@ -87,11 +87,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                     const channelResp = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true`, {
                                         headers: { Authorization: `Bearer ${session.provider_token}` }
                                     });
-                                    
+
                                     if (channelResp.ok) {
                                         const channelData = await channelResp.json();
                                         const channel = channelData.items?.[0];
-                                        
+
                                         if (channel) {
                                             // 2. Insert into Supabase
                                             const { error: dbError } = await supabase
@@ -142,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 provider: 'google',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`,
-                    scopes: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
+                    scopes: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.force-ssl',
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
@@ -162,6 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 provider: 'facebook',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`,
+                    scopes: 'pages_show_list,instagram_basic,instagram_manage_insights',
                 }
             });
             if (error) throw error;

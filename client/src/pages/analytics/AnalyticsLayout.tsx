@@ -47,6 +47,7 @@ export const AnalyticsLayout: React.FC = () => {
                     <TabLink to="/analytics/overview" label="Overview" isActive={location.pathname === '/analytics' || location.pathname === '/analytics/overview'} />
                     <TabLink to="/analytics/audience" label="Audience" isActive={location.pathname === '/analytics/audience'} />
                     <TabLink to="/analytics/content" label="Content" isActive={location.pathname === '/analytics/content'} />
+                    <TabLink to="/analytics/instagram" label="Instagram" isActive={location.pathname === '/analytics/instagram'} />
                 </div>
             </header>
 

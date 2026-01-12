@@ -19,6 +19,7 @@ import { AnalyticsLayout } from './pages/analytics/AnalyticsLayout';
 import { AnalyticsOverview } from './pages/analytics/AnalyticsOverview';
 import { AnalyticsAudience } from './pages/analytics/AnalyticsAudience';
 import { AnalyticsContent } from './pages/analytics/AnalyticsContent';
+import { InstagramContent } from './pages/analytics/InstagramContent';
 
 
 import SidebarLayout from './components/SidebarLayout';
@@ -51,6 +52,7 @@ function App() {
                 <Route path="overview" element={<AnalyticsOverview />} />
                 <Route path="audience" element={<AnalyticsAudience />} />
                 <Route path="content" element={<AnalyticsContent />} />
+                <Route path="instagram" element={<InstagramContent />} />
               </Route>
 
               <Route path="/ai-studio" element={<AIStudio />} />
