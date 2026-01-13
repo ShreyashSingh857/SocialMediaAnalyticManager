@@ -162,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 provider: 'facebook',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`,
-                    scopes: 'pages_show_list,instagram_basic,instagram_manage_insights',
+                    scopes: 'public_profile,email,pages_show_list,instagram_basic,instagram_manage_insights',
                 }
             });
             if (error) throw error;
