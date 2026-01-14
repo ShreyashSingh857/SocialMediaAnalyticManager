@@ -8,12 +8,32 @@ const AuthCallback = () => {
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
     const [status, setStatus] = useState<string>("Initializing auth callback...");
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     useEffect(() => {
+        // Build URLSearchParams from both search and hash
+        const params = new URLSearchParams(window.location.search);
+        const hash = window.location.hash.substring(1); // remove #
+        const hashParams = new URLSearchParams(hash);
+        
+        const error = params.get('error') || hashParams.get('error');
+        const errorDescription = params.get('error_description') || hashParams.get('error_description');
+
+        if (error) {
+            let userFriendlyError = errorDescription;
+            if (errorDescription?.includes('getting user email')) {
+                userFriendlyError = "Facebook did not return an email address. This usually happens if your Facebook account has no verified email, or if the Facebook App is in 'Development Mode' and you are not added as a Tester.";
+            }
+            setStatus("Authentication Failed");
+            setErrorMsg(userFriendlyError || "Unknown error occurred during login.");
+            return;
+        }
+
         const handleAuthCallback = async () => {
-            // 1. If we already have a user from Context, we show it
+            // 1. If we already have a user from Context, we redirect
             if (user) {
-                setStatus("User verified in Context! (Ready)");
+                setStatus("User verified! Redirecting...");
+                setTimeout(() => navigate('/'), 1000);
                 return;
             }
 
@@ -32,9 +52,17 @@ const AuthCallback = () => {
                     console.error("Error during auth callback:", error);
                     setStatus(`Supabase Error: ${error.message}`);
                 } else if (session) {
-                    setStatus("Session found in Supabase! Waiting for Context sync...");
+                    setStatus("Session found in Supabase! syncing...");
+                    // The AuthContext listener should pick this up and set 'user', triggering the redirect in block #1
                 } else {
-                    setStatus("No session found in Supabase.");
+                    // Sometimes Supabase takes a moment to persist the session from the hash fragment
+                    // check if we have access_token in hash
+                    const accessToken = hashParams.get('access_token');
+                    if (accessToken) {
+                         setStatus("Processing token...");
+                    } else {
+                         setStatus("No session found. Please try logging in again.");
+                    }
                 }
             } catch (err: any) {
                 setStatus(`Exception: ${err.message}`);
@@ -46,9 +74,16 @@ const AuthCallback = () => {
 
     return (
         <div className="min-h-screen bg-[#0f1014] flex flex-col items-center justify-center text-white p-4">
-            <div className="text-center max-w-lg">
-                <p className="text-xl mb-4 font-semibold">Authentication Debugger</p>
+            <div className="text-center max-w-lg w-full">
+                <p className="text-xl mb-4 font-semibold">Authentication Status</p>
 
+                {errorMsg && (
+                    <div className="bg-red-500/20 border border-red-500 text-red-100 p-4 rounded-lg mb-6 text-left">
+                        <h3 className="font-bold flex items-center gap-2 mb-2"><span className="text-xl">⚠️</span> Login Failed</h3>
+                        <p>{errorMsg}</p>
+                    </div>
+                )}
+                
                 <div className="bg-gray-900 p-4 rounded-lg mb-6 text-left font-mono text-xs overflow-auto max-h-60 border border-gray-700">
                     <div>Status: <span className="text-white">{status}</span></div>
                     <div className="mt-2 text-blue-400">AuthContext User: <span className="text-white">{user ? "Logged In" : "Null"}</span></div>

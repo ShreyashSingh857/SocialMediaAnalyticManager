@@ -34,26 +34,13 @@ export interface AIInsights {
             trend_slope: number;
             peak_date: string;
             peak_views: number;
-            avd_minutes?: number;
-            sub_conversion_rate?: number;
         };
         rolling_averages: { date: string; views_7d_avg: number }[];
     };
     engagement?: {
         average_engagement_rate: number;
         top_engaged_videos: { id: string; title: string; engagement_rate: number }[];
-        engagement_quality?: { likability: number; discussability: number; video_id: string }[];
     };
-}
-
-export interface VideoComment {
-    id: string;
-    video_id: string;
-    author_name: string;
-    author_avatar: string;
-    text_display: string;
-    published_at: string;
-    like_count: number;
 }
 
 interface YouTubeDataState {
@@ -63,8 +50,6 @@ interface YouTubeDataState {
     history: DailyMetric[];
     topVideos: VideoStats[];
     insights: AIInsights | null;
-    comments: Record<string, VideoComment[]>;
-    debugInfo?: any;
 }
 
 export const useYouTubeData = () => {
@@ -74,8 +59,7 @@ export const useYouTubeData = () => {
         overview: null,
         history: [],
         topVideos: [],
-        insights: null,
-        comments: {}
+        insights: null
     });
 
     const loadInsightsFromDB = async (accountId: string) => {
@@ -136,44 +120,6 @@ export const useYouTubeData = () => {
                 .order('published_at', { ascending: false })
                 .limit(50);
 
-            // Load Comments (NEW)
-            const videoIds = dbVideos?.map(v => v.id) || [];
-            let commentsMap: Record<string, VideoComment[]> = {};
-
-            if (videoIds.length > 0) {
-                const { data: dbComments } = await supabase
-                    .from('video_comments')
-                    .select('*')
-                    .in('video_id', videoIds)
-                    .order('published_at', { ascending: false });
-
-                if (dbComments) {
-                    dbComments.forEach((c: any) => {
-                        // Map internal UUID back to external ID if needed, 
-                        // but CommentsList expects map keyed by EXTERNAL video ID usually? 
-                        // Wait, VideoStats uses external_id as 'id'. 
-                        // The 'video_comments' table stores 'video_id' which is the UUID from 'content_items'.
-                        // So we need to map content_item.id (UUID) -> content_item.external_id (YouTube ID).
-
-                        const video = dbVideos?.find(v => v.id === c.video_id);
-                        if (video && video.external_id) {
-                            if (!commentsMap[video.external_id]) {
-                                commentsMap[video.external_id] = [];
-                            }
-                            commentsMap[video.external_id].push({
-                                id: c.id,
-                                video_id: c.video_id,
-                                author_name: c.author_name,
-                                author_avatar: c.author_avatar,
-                                text_display: c.text_display,
-                                published_at: c.published_at,
-                                like_count: c.like_count
-                            });
-                        }
-                    });
-                }
-            }
-
             // Load AI Insights
             const insights = await loadInsightsFromDB(account.id);
 
@@ -215,8 +161,7 @@ export const useYouTubeData = () => {
                 overview,
                 history,
                 topVideos,
-                insights,
-                comments: commentsMap
+                insights
             };
 
         } catch (dbErr) {
@@ -250,11 +195,17 @@ export const useYouTubeData = () => {
                 return;
             }
 
+            // Only send session tokens if the current active provider is Google.
+            // If the user is logged in via Facebook (linking), we shouldn't send the Facebook token.
+            const isGoogleSession = currentSession.user?.app_metadata?.provider === 'google';
+            const accessToken = isGoogleSession ? currentSession.provider_token : undefined;
+            const refreshToken = isGoogleSession ? currentSession.provider_refresh_token : undefined;
+
             const { data: syncResult, error: syncError } = await supabase.functions.invoke('youtube-sync', {
-                body: {
+                body: { 
                     user_id: userId,
-                    access_token: currentSession.provider_token,
-                    refresh_token: currentSession.provider_refresh_token
+                    access_token: accessToken,
+                    refresh_token: refreshToken
                 }
             });
 
@@ -273,9 +224,6 @@ export const useYouTubeData = () => {
             }
 
             console.log("Sync Complete:", syncResult);
-            // UPDATE STATE WITH DEBUG INFO
-            setData(prev => ({ ...prev, debugInfo: syncResult }));
-
             // 3. Re-fetch from DB after sync
             const freshData = await loadFromDB(userId);
             if (freshData) {
