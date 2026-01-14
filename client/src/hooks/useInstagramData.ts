@@ -112,8 +112,23 @@ export const useInstagramData = () => {
             }
 
             // 2. Server Sync
-            // Only sync if we have a provider token (Facebook login)
+            // Only sync if we have a provider token and it appears to be from Facebook (based on recent identity)
+            let isFacebookToken = false;
             if (session?.provider_token) {
+                 if (session.user?.app_metadata?.provider === 'facebook') {
+                     isFacebookToken = true;
+                 } else if (session.user?.identities) {
+                     // Check if most recent sign-in is facebook
+                     const sorted = [...session.user.identities].sort((a, b) => 
+                        new Date(b.last_sign_in_at || 0).getTime() - new Date(a.last_sign_in_at || 0).getTime()
+                     );
+                     if (sorted[0]?.provider === 'facebook') {
+                         isFacebookToken = true;
+                     }
+                 }
+            }
+
+            if (session?.provider_token && isFacebookToken) {
                 console.log("Syncing Instagram Data...");
                 const { data: syncResult, error: syncError } = await supabase.functions.invoke('instagram-sync', {
                     body: {

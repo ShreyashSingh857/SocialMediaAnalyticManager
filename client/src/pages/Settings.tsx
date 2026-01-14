@@ -4,6 +4,26 @@ import { useAuth } from '../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
     const { signInWithGoogle, signInWithFacebook, user } = useAuth();
+    const [linking, setLinking] = React.useState<string | null>(null);
+    const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+
+    const handleLink = async (provider: 'google' | 'facebook') => {
+        if (linking) return;
+        setLinking(provider);
+        setErrorMsg(null);
+        try {
+            if (provider === 'google') await signInWithGoogle();
+            else await signInWithFacebook();
+        } catch (error: any) {
+            console.error('Linking error:', error);
+            if (error.message?.includes('Manual linking is disabled')) {
+                setErrorMsg("Configuration Error: Please enable 'Manual Linking' in your Supabase Dashboard (Authentication > Settings > Security).");
+            } else {
+                setErrorMsg(`Connection failed: ${error.message}`);
+            }
+            setLinking(null);
+        }
+    };
 
     return (
         <div className="p-8 space-y-8 bg-[#0f1014] min-h-screen text-white">
@@ -31,6 +51,16 @@ export const Settings: React.FC = () => {
                         </div>
 
                         <div className="p-6 space-y-6">
+                            {errorMsg && (
+                                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg flex items-start space-x-3">
+                                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                                    <div className="text-sm">
+                                        <p className="font-bold">Connection Failed</p>
+                                        <p>{errorMsg}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-start space-x-3">
                                 <AlertCircle className="text-blue-400 shrink-0 mt-0.5" size={20} />
                                 <p className="text-sm text-gray-300">
@@ -40,18 +70,34 @@ export const Settings: React.FC = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button onClick={() => signInWithGoogle()} className="w-full bg-white text-gray-900 font-bold py-3 px-4 rounded-lg hover:bg-gray-100 transition-all duration-300 flex items-center justify-center space-x-3">
-                                    <img
-                                        src="https://www.google.com/favicon.ico"
-                                        alt="Google"
-                                        className="w-5 h-5"
-                                    />
-                                    <span>Connect Google</span>
+                                <button 
+                                    onClick={() => handleLink('google')} 
+                                    disabled={!!linking}
+                                    className="w-full bg-white text-gray-900 font-bold py-3 px-4 rounded-lg hover:bg-gray-100 transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {linking === 'google' ? (
+                                        <span>Connecting...</span>
+                                    ) : (
+                                        <>
+                                            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+                                            <span>Connect Google</span>
+                                        </>
+                                    )}
                                 </button>
 
-                                <button onClick={() => signInWithFacebook()} className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-[#1877F2]/20 transition-all duration-300 flex items-center justify-center space-x-3">
-                                    <Facebook className="w-5 h-5" />
-                                    <span>Connect Facebook</span>
+                                <button 
+                                    onClick={() => handleLink('facebook')} 
+                                    disabled={!!linking}
+                                    className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-[#1877F2]/20 transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {linking === 'facebook' ? (
+                                        <span>Connecting...</span>
+                                    ) : (
+                                        <>
+                                            <Facebook className="w-5 h-5" />
+                                            <span>Connect Facebook</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { motion } from 'framer-motion';
 import { TrendingUp, Play, Eye, Calendar, ExternalLink } from 'lucide-react';
 
@@ -51,7 +52,23 @@ export const TrendyContent: React.FC = () => {
 
     useEffect(() => {
         const fetchTrends = async () => {
-            if (!session?.provider_token) {
+             // Logic to get the correct token
+            let token = session?.provider_token;
+            if (session?.user?.app_metadata?.provider !== 'google') {
+                // If current session is NOT Google (e.g. Facebook), try to fetch stored Google token
+                const { data } = await supabase
+                    .from('connected_accounts')
+                    .select('access_token')
+                    .eq('user_id', session?.user?.id)
+                    .eq('platform', 'youtube')
+                    .maybeSingle(); // Use maybeSingle to avoid 406 if not found
+                
+                if (data?.access_token) {
+                    token = data.access_token;
+                }
+            }
+
+            if (!token) {
                 setLoading(false);
                 return;
             }
@@ -64,7 +81,7 @@ export const TrendyContent: React.FC = () => {
                     `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=US&maxResults=5&videoCategoryId=${categoryId}`,
                     {
                         headers: {
-                            Authorization: `Bearer ${session.provider_token}`,
+                            Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         }
                     }
