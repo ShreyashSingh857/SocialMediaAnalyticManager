@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 provider: 'google',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`,
-                    scopes: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
+                    scopes: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly',
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
