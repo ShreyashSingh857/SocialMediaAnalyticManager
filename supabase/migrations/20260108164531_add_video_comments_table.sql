@@ -15,20 +15,42 @@ CREATE TABLE IF NOT EXISTS public.video_comments (
 -- Enable RLS
 ALTER TABLE public.video_comments ENABLE ROW LEVEL SECURITY;
 
--- Allow read access to authenticated users
-CREATE POLICY "Allow read access to authenticated users"
-ON public.video_comments
-FOR SELECT
-TO authenticated
-USING (true);
+-- Allow read access to authenticated users (only create if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'video_comments'
+          AND policyname = 'Allow read access to authenticated users'
+    ) THEN
+        CREATE POLICY "Allow read access to authenticated users"
+        ON public.video_comments
+        FOR SELECT
+        TO authenticated
+        USING (true);
+    END IF;
+END
+$$;
 
--- Allow insert/update/delete for service role (Edge Functions)
-CREATE POLICY "Allow all access to service role"
-ON public.video_comments
-FOR ALL
-TO service_role
-USING (true)
-WITH CHECK (true);
+-- Allow insert/update/delete for service role (only create if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'video_comments'
+          AND policyname = 'Allow all access to service role'
+    ) THEN
+        CREATE POLICY "Allow all access to service role"
+        ON public.video_comments
+        FOR ALL
+        TO service_role
+        USING (true)
+        WITH CHECK (true);
+    END IF;
+END
+$$;
 
 -- Index for faster queries by video
 CREATE INDEX IF NOT EXISTS idx_video_comments_video_id ON public.video_comments(video_id);

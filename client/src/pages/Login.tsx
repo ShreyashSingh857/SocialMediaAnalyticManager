@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/Input';
-import { Mail, Lock, LogIn, Facebook, Loader } from 'lucide-react';
+import { Mail, Lock, LogIn, Loader } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
-    const { signInWithGoogle, signInWithFacebook } = useAuth();
+    const { signInWithGoogle } = useAuth();
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -35,14 +35,6 @@ const Login: React.FC = () => {
     const handleGoogleLogin = async () => {
         try {
             await signInWithGoogle();
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleFacebookLogin = async () => {
-        try {
-            await signInWithFacebook();
         } catch (error) {
             console.error(error);
         }

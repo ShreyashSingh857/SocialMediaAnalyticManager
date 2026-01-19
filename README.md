@@ -4,7 +4,7 @@ A comprehensive social media management platform that leverages AI to provide de
 
 ## 🚀 Features
 
-- **Multi-Platform Integration**: Connect and analyze data from Instagram and YouTube.
+- **YouTube Integration**: Connect and analyze data from YouTube.
 - **AI-Powered Insights**: deeply analyze engagement, trends, and content performance using Gemini AI.
 - **Advanced Analytics**: Visualizations for views, engagement rates, subscriber growth, and more.
 - **Predictive Metrics**: estimated impact of future content based on historical data.

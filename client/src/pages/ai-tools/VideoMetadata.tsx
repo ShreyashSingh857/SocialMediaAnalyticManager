@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Copy, ArrowLeft, Loader2, AlertCircle, Hash, AlignLeft, Type } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../lib/config';
 
 interface MetadataResult {
     titles: string[];
@@ -26,7 +27,7 @@ export const VideoMetadata: React.FC = () => {
         setResult(null);
 
         try {
-            const response = await fetch('http://localhost:8000/api/v1/ai/generate-metadata', {
+            const response = await fetch(API_ENDPOINTS.AI.GENERATE_METADATA, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

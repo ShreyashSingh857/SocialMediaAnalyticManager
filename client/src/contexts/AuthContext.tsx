@@ -2,14 +2,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { resolveGoogleTokens } from '../lib/tokenManager';
 
 interface AuthContextType {
     user: User | null;
     session: Session | null;
-    profile: any | null; // You might want to define a stricter type here
+    profile: any | null;
     loading: boolean;
     signInWithGoogle: () => Promise<void>;
-    signInWithFacebook: () => Promise<void>;
+    unlinkIdentity: (provider: 'google') => Promise<void>;
     signOut: () => Promise<void>;
 }
 
@@ -51,117 +52,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         // Listen for changes on auth state (sign in, sign out, etc.)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('🔐 Auth Event:', event);
+            console.log('📋 Session:', session);
+            console.log('🎫 Provider Token:', session?.provider_token);
+            console.log('🔄 Provider Refresh Token:', session?.provider_refresh_token);
+      console.log('👥 User Identities:', session?.user?.identities);
+      console.log('🔍 Identity Count:', session?.user?.identities?.length);
+            
+            // Display OAuth callback debug if available
+            const oauthDebug = localStorage.getItem('last_oauth_debug');
+            if (oauthDebug) {
+                console.log('📱 LAST OAUTH CALLBACK:\n' + oauthDebug);
+                localStorage.removeItem('last_oauth_debug'); // Clear after displaying
+            }
+            
+            if (session?.provider_token) {
+                const token = session.provider_token;
+                const provider = session.user?.app_metadata?.provider;
+                console.log('✅ Got provider token:', token.substring(0, 20) + '...', 'from provider:', provider);
+            } else {
+                console.warn('⚠️ No provider_token in session for event:', event);
+            }
 
             // Fetch profile and set loading to false immediately
             if (session?.user) {
                 // Return the promise so we can chain if needed, but primarily to ensure state updates
                 fetchProfile(session.user.id).then(() => setLoading(false));
-
-                // Trigger server-side sync with provider tokens for initial link/refresh storage
-                if (session?.provider_token) {
-                    const invokeBody = {
-                        user_id: session.user.id,
-                        access_token: session.provider_token,
-                        refresh_token: session.provider_refresh_token // Crucial for future background syncs
-                    };
-
-                    // Determine provider from most recent identity login
-                    let provider = session.user.app_metadata.provider;
-                    if (session.user.identities && session.user.identities.length > 0) {
-                        const sortedIdentities = [...session.user.identities].sort((a, b) => {
-                            return new Date(b.last_sign_in_at || 0).getTime() - new Date(a.last_sign_in_at || 0).getTime();
-                        });
-                        if (sortedIdentities[0]) {
-                            provider = sortedIdentities[0].provider;
-                        }
-                    }
-                    
-                    console.log("Detected Provider for Sync:", provider);
-
-                    if (provider === 'google') {
-                        supabase.functions.invoke('youtube-sync', {
-                            body: invokeBody
-                        }).then(async ({ data, error }) => {
-                            if (error) {
-                                let errorMsg = error.message;
-                                try {
-                                    const errorDesc = await (error as any).context?.json();
-                                    if (errorDesc?.error) errorMsg = errorDesc.error;
-                                } catch (e) { }
-                                console.error("Initial Sync Failed:", errorMsg);
-
-                                // FALLBACK: Client-side linking if server function is outdated
-                                if (errorMsg.includes("No YouTube account") || errorMsg.includes("400")) {
-                                    console.log("Attempting client-side account linking...");
-                                    try {
-                                        // 1. Fetch Channel Info
-                                        const channelResp = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true`, {
-                                            headers: { Authorization: `Bearer ${session.provider_token}` }
-                                        });
-
-                                        if (channelResp.ok) {
-                                            const channelData = await channelResp.json();
-                                            const channel = channelData.items?.[0];
-
-                                            if (channel) {
-                                                // 2. Insert into Supabase
-                                                const { error: dbError } = await supabase
-                                                    .from("connected_accounts")
-                                                    .upsert({
-                                                        user_id: session.user.id,
-                                                        platform: "youtube",
-                                                        external_account_id: channel.id,
-                                                        account_name: channel.snippet.title,
-                                                        account_handle: channel.snippet.customUrl,
-                                                        avatar_url: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.default?.url,
-                                                        access_token: session.provider_token,
-                                                        refresh_token: session.provider_refresh_token,
-                                                        token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
-                                                        is_active: true
-                                                    }, { onConflict: 'user_id,platform,external_account_id' });
-
-                                                if (dbError) {
-                                                    console.error("Client-side linking failed:", dbError);
-                                                } else {
-                                                    console.log("Client-side linking successful!");
-                                                    fetchProfile(session.user.id);
-                                                }
-                                            }
-                                        }
-                                    } catch (fallbackErr) {
-                                        console.error("Client-side fallback error:", fallbackErr);
-                                    }
-                                }
-                            } else {
-                                console.log("Initial Sync Successful:", data);
-                                fetchProfile(session.user.id);
-                            }
-                        });
-                    } else if (provider === 'facebook') {
-                        supabase.functions.invoke('instagram-sync', {
-                            body: invokeBody
-                        }).then(({ data, error }) => {
-                            if (error) {
-                                console.error("Initial Instagram Sync Failed:", error);
-                            } else {
-                                console.log("Initial Instagram Sync Successful:", data);
-                                fetchProfile(session.user.id);
-                            }
-                        });
-                    }
-                }
-
-
             } else {
                 setProfile(null);
                 setLoading(false);
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => authListener.subscription.unsubscribe();
     }, []);
 
     const signInWithGoogle = async () => {
@@ -184,37 +108,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const signInWithFacebook = async () => {
+    const unlinkIdentity = async (provider: 'google') => {
+        console.log(`🔓 Unlinking ${provider} identity...`);
+        
         try {
-            if (user) {
-                // Link account if user is already logged in
-                const { error } = await supabase.auth.linkIdentity({
-                    provider: 'facebook',
-                    options: {
-                        redirectTo: `${window.location.origin}/auth/callback`,
-                        scopes: 'public_profile,email,pages_show_list,instagram_basic,instagram_manage_insights,pages_read_engagement',
-                    }
-                });
-                if (error) throw error;
-            } else {
-                // Normal sign in (shouldn't happen with current UI restrictions)
-                const { error } = await supabase.auth.signInWithOAuth({
-                    provider: 'facebook',
-                    options: {
-                        redirectTo: `${window.location.origin}/auth/callback`,
-                        scopes: 'public_profile,email,pages_show_list,instagram_basic,instagram_manage_insights,pages_read_engagement',
-                    }
-                });
-                if (error) throw error;
+            // Find the identity to unlink
+            const identity = user?.identities?.find((id: any) => id.provider === provider);
+            
+            if (!identity) {
+                console.warn(`No ${provider} identity found to unlink`);
+                return;
             }
-        } catch (error) {
-            console.error('Error signing in with Facebook:', error);
+            
+            const { error } = await supabase.auth.unlinkIdentity(identity);
+            if (error) {
+                console.error(`Failed to unlink ${provider}:`, error);
+                throw error;
+            }
+
+            console.log(`✅ Successfully unlinked ${provider}`);
+
+            // Refresh auth state so UI updates immediately
+            const { data: refreshed } = await supabase.auth.getUser();
+            setUser(refreshed.user);
+            setSession(prev => ({ ...prev, user: refreshed.user } as any));
+        } catch (error: any) {
+            console.error(`Error unlinking ${provider}:`, error);
             throw error;
         }
     };
-
     const signOut = async () => {
         try {
+            try {
+                const { data: { session: currentSession } } = await supabase.auth.getSession();
+                if (currentSession?.user?.id) {
+                    const { accessToken } = await resolveGoogleTokens(
+                        currentSession.user.id,
+                        currentSession.provider_token,
+                        currentSession.provider_refresh_token
+                    );
+                    if (accessToken) {
+                        fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(accessToken)}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                        }).catch(() => undefined);
+                    }
+                }
+            } catch { /* ignore */ }
+
             const { error } = await supabase.auth.signOut();
             if (error) throw error;
         } catch (error) {
@@ -224,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, profile, loading, signInWithGoogle, signInWithFacebook, signOut }}>
+        <AuthContext.Provider value={{ user, session, profile, loading, signInWithGoogle, unlinkIdentity, signOut }}>
             {!loading ? children : <div className="min-h-screen bg-[#0f1014] flex items-center justify-center text-white">Loading...</div>}
         </AuthContext.Provider>
     );

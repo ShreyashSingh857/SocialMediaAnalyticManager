@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Video, Scroll, Copy, ArrowLeft, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../lib/config';
 
 interface ScriptResult {
     hook: string;
@@ -30,7 +31,7 @@ export const ScriptAssistant: React.FC = () => {
         setResult(null);
 
         try {
-            const response = await fetch('http://localhost:8000/api/v1/ai/generate-script', {
+            const response = await fetch(API_ENDPOINTS.AI.GENERATE_SCRIPT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

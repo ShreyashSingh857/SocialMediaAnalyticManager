@@ -1,11 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// CORS headers
+// CORS headers - required for browser requests
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Helper to add CORS to any response
+function corsify(response: Response): Response {
+    const newResponse = new Response(response.body, response);
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+        newResponse.headers.set(key, value);
+    });
+    return newResponse;
+}
 
 // Env Validation
 // @ts-ignore
@@ -20,13 +30,24 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const AI_SERVICE_URL = Deno.env.get("AI_SERVICE_URL") || "http://localhost:8000";
 
 serve(async (req: Request) => {
+    // CRITICAL: Handle CORS preflight FIRST
     if (req.method === "OPTIONS") {
-        return new Response("ok", { headers: corsHeaders });
+        console.log("[youtube-sync] Handling CORS preflight");
+        return corsify(new Response(null, { status: 200 }));
     }
 
     try {
-        if (!GOOGLE_CLIENT_ID) throw new Error("Missing GOOGLE_CLIENT_ID");
-        if (!GOOGLE_CLIENT_SECRET) throw new Error("Missing GOOGLE_CLIENT_SECRET");
+        console.log("[youtube-sync] Request received:", req.method);
+        
+        // Validate environment variables
+        if (!GOOGLE_CLIENT_ID) {
+            console.error("[youtube-sync] Missing GOOGLE_CLIENT_ID environment variable");
+            throw new Error("Missing GOOGLE_CLIENT_ID - set in Supabase Project Settings → Edge Functions");
+        }
+        if (!GOOGLE_CLIENT_SECRET) {
+            console.error("[youtube-sync] Missing GOOGLE_CLIENT_SECRET environment variable");
+            throw new Error("Missing GOOGLE_CLIENT_SECRET - set in Supabase Project Settings → Edge Functions");
+        }
         if (!SUPABASE_URL) throw new Error("Missing SUPABASE_URL");
         if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
 
@@ -95,6 +116,7 @@ serve(async (req: Request) => {
         } else if (account && reqRefreshToken && reqRefreshToken !== account.refresh_token) {
             console.log("Updating stored refresh_token...");
             await supabase.from("connected_accounts").update({ refresh_token: reqRefreshToken }).eq("id", account.id);
+            account = { ...account, refresh_token: reqRefreshToken } as typeof account;
         }
 
         if (!account) {
@@ -105,8 +127,9 @@ serve(async (req: Request) => {
         // --- TOKEN REFRESH LOGIC ---
         const expiresAt = account.token_expires_at;
         const isExpired = expiresAt ? new Date(expiresAt).getTime() < Date.now() + 300000 : true; // 5 min buffer
+        const refreshToken = account.refresh_token || reqRefreshToken;
 
-        if ((isExpired || !accessToken) && account.refresh_token) {
+        if ((isExpired || !accessToken) && refreshToken) {
             console.log("Access token expired or missing. Refreshing...");
             const refreshResp = await fetch("https://oauth2.googleapis.com/token", {
                 method: "POST",
@@ -114,7 +137,7 @@ serve(async (req: Request) => {
                 body: new URLSearchParams({
                     client_id: GOOGLE_CLIENT_ID,
                     client_secret: GOOGLE_CLIENT_SECRET,
-                    refresh_token: account.refresh_token,
+                    refresh_token: refreshToken,
                     grant_type: "refresh_token",
                 }),
             });
@@ -139,6 +162,9 @@ serve(async (req: Request) => {
                     throw new Error("YouTube session expired. Please sign in with Google again.");
                 }
             }
+        } else if ((isExpired || !accessToken) && !refreshToken) {
+            console.warn("Access token expired and no refresh_token available. Prompting re-auth.");
+            throw new Error("YouTube access token expired. Please sign in with Google again to refresh permissions.");
         }
 
         if (!accessToken) throw new Error("Could not obtain a valid YouTube access token.");
@@ -293,8 +319,8 @@ serve(async (req: Request) => {
                             logs: debugLogs
                         }
                     }), {
-                        headers: { ...corsHeaders, "Content-Type": "application/json" },
-                    });
+                        headers: { "Content-Type": "application/json" },
+                    }).then(corsify);
                 }
             }
         }
@@ -303,14 +329,14 @@ serve(async (req: Request) => {
         // The frontend now triggers the AI service directly to ensure valid network reachability (localhost vs cloud).
 
         return new Response(JSON.stringify({ success: true, channel: channelItem.snippet.title, message: "No videos found or playlist API failed" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+            headers: { "Content-Type": "application/json" },
+        }).then(corsify);
 
     } catch (error: any) {
         console.error(error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return corsify(new Response(JSON.stringify({ error: error.message }), {
             status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+            headers: { "Content-Type": "application/json" },
+        }));
     }
 });

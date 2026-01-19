@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 
@@ -29,54 +29,97 @@ const CustomTooltip = ({ active, payload, label, formatter }: any) => {
 };
 
 export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ title, data, color = "#3b82f6", valueFormatter }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [dimensions, setDimensions] = useState({ width: 800, height: 320 });
+
+    useEffect(() => {
+        const element = containerRef.current;
+        if (!element) return;
+
+        const updateDimensions = () => {
+            const width = element.offsetWidth;
+            const height = element.offsetHeight || 320;
+            
+            // Ensure minimum dimensions to prevent recharts warnings
+            setDimensions({ 
+                width: Math.max(width, 300),
+                height: Math.max(height, 200)
+            });
+        };
+
+        // Initial check with delay to allow layout
+        updateDimensions();
+        const initialTimer = setTimeout(updateDimensions, 100);
+
+        // ResizeObserver for dynamic resizing
+        const resizeObserver = new ResizeObserver(updateDimensions);
+        resizeObserver.observe(element);
+
+        return () => {
+            clearTimeout(initialTimer);
+            resizeObserver.disconnect();
+        };
+    }, []);
+
     return (
-        <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5">
+        <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5 flex flex-col">
             <h3 className="text-gray-400 text-sm font-medium mb-6">{title}</h3>
-            <div className="h-[300px] w-full" style={{ width: '100%', minWidth: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                        data={data}
-                        margin={{
-                            top: 5,
-                            right: 0,
-                            left: 0,
-                            bottom: 0,
-                        }}
-                    >
-                        <defs>
-                            <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                                <stop offset="95%" stopColor={color} stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} opacity={0.5} />
-                        <XAxis
-                            dataKey="date"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                            tickFormatter={(str) => format(new Date(str), 'MMM d')}
-                            minTickGap={30}
-                        />
-                        <YAxis
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                            tickFormatter={(number) =>
-                                valueFormatter ? valueFormatter(number) : new Intl.NumberFormat('en', { notation: "compact", compactDisplay: "short" }).format(number)
-                            }
-                        />
-                        <Tooltip content={<CustomTooltip formatter={valueFormatter} />} cursor={{ stroke: '#4b5563', strokeDasharray: '4 4' }} />
-                        <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke={color}
-                            strokeWidth={2}
-                            fillOpacity={1}
-                            fill={`url(#gradient-${title})`}
-                        />
-                    </AreaChart>
-                </ResponsiveContainer>
+            {/* Container with guaranteed minimum dimensions */}
+            <div 
+                ref={containerRef} 
+                className="flex-1 w-full min-h-80 min-w-0"
+                style={{ minHeight: '320px' }}
+            >
+                {data && data.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={320} minWidth={300} debounce={300}>
+                            <AreaChart
+                                data={data}
+                                margin={{
+                                    top: 5,
+                                    right: 0,
+                                    left: 0,
+                                    bottom: 0,
+                                }}
+                            >
+                                <defs>
+                                    <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor={color} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} opacity={0.5} />
+                                <XAxis
+                                    dataKey="date"
+                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(str) => format(new Date(str), 'MMM d')}
+                                    minTickGap={30}
+                                />
+                                <YAxis
+                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(number) =>
+                                        valueFormatter ? valueFormatter(number) : new Intl.NumberFormat('en', { notation: "compact", compactDisplay: "short" }).format(number)
+                                    }
+                                />
+                                <Tooltip content={<CustomTooltip formatter={valueFormatter} />} cursor={{ stroke: '#4b5563', strokeDasharray: '4 4' }} />
+                                <Area
+                                    type="monotone"
+                                    dataKey="value"
+                                    stroke={color}
+                                    strokeWidth={2}
+                                    fillOpacity={1}
+                                    fill={`url(#gradient-${title})`}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                ) : (
+                    <div className="text-gray-500 text-sm flex items-center justify-center w-full h-80">
+                        {data && data.length === 0 ? 'No data available' : 'Loading chart...'}
+                    </div>
+                )}
             </div>
         </div>
     );

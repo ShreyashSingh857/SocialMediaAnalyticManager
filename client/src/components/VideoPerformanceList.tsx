@@ -16,6 +16,28 @@ interface VideoPerformanceListProps {
     videos: VideoPerformance[];
 }
 
+// Fallback placeholder thumbnail when image fails to load
+const FALLBACK_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"%3E%3Crect fill="%23333" width="320" height="180"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="16" fill="%23666" font-family="system-ui"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
+
+const ImageWithFallback: React.FC<{ src: string; alt: string; className: string }> = ({ src, alt, className }) => {
+    const [imageSrc, setImageSrc] = useState(src);
+    const [hasError, setHasError] = useState(false);
+
+    const handleError = () => {
+        setHasError(true);
+        setImageSrc(FALLBACK_PLACEHOLDER);
+    };
+
+    return (
+        <img 
+            src={imageSrc || FALLBACK_PLACEHOLDER} 
+            alt={alt} 
+            className={className}
+            onError={handleError}
+        />
+    );
+};
+
 export const VideoPerformanceList: React.FC<VideoPerformanceListProps> = ({ videos }) => {
     const [selectedVideo, setSelectedVideo] = useState<VideoPerformance | null>(null);
     const [showAll, setShowAll] = useState(false);
@@ -45,7 +67,7 @@ export const VideoPerformanceList: React.FC<VideoPerformanceListProps> = ({ vide
                         >
                             <div className="relative w-32 aspect-video rounded-lg overflow-hidden flex-shrink-0 bg-gray-800">
                                 {video.thumbnailUrl ? (
-                                    <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
+                                    <ImageWithFallback src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-600">No Image</div>
                                 )}
@@ -89,7 +111,13 @@ export const VideoPerformanceList: React.FC<VideoPerformanceListProps> = ({ vide
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedVideo(null)}>
                     <div className="bg-[#1a1b23] border border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="relative aspect-video bg-black">
-                            <img src={selectedVideo.thumbnailUrl} alt={selectedVideo.title} className="w-full h-full object-contain" />
+                            {selectedVideo.thumbnailUrl ? (
+                                <ImageWithFallback src={selectedVideo.thumbnailUrl} alt={selectedVideo.title} className="w-full h-full object-contain" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                                    <span className="text-gray-500">No Thumbnail Available</span>
+                                </div>
+                            )}
                             <button 
                                 onClick={() => setSelectedVideo(null)}
                                 className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
