@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { resolveGoogleTokens } from '../lib/tokenManager';
+import { API_ENDPOINTS } from '../lib/config';
 
 export interface DailyMetric {
     date: string;
@@ -16,6 +18,15 @@ export interface VideoStats {
     views: number;
     likes: number;
     comments: number;
+}
+
+export interface VideoComment {
+    id: string;
+    author_name: string;
+    author_avatar: string;
+    text_display: string;
+    published_at: string;
+    like_count: number;
 }
 
 export interface ChannelOverview {
@@ -50,6 +61,7 @@ interface YouTubeDataState {
     history: DailyMetric[];
     topVideos: VideoStats[];
     insights: AIInsights | null;
+    comments: Record<string, VideoComment[]>;
 }
 
 export const useYouTubeData = () => {
@@ -59,7 +71,8 @@ export const useYouTubeData = () => {
         overview: null,
         history: [],
         topVideos: [],
-        insights: null
+        insights: null,
+        comments: {}
     });
 
     const loadInsightsFromDB = async (accountId: string) => {
@@ -80,6 +93,49 @@ export const useYouTubeData = () => {
             console.error("Error loading insights:", err);
         }
         return null;
+    };
+
+    const loadCommentsFromDB = async () => {
+        try {
+            const { data: commentsData, error } = await supabase
+                .from('video_comments')
+                .select('*')
+                .order('published_at', { ascending: false });
+
+            if (error) {
+                console.error("Error fetching comments from DB:", error);
+                return {};
+            }
+
+            const commentsMap: Record<string, VideoComment[]> = {};
+            
+            if (commentsData && commentsData.length > 0) {
+                console.log(`📥 Loaded ${commentsData.length} comments from database`);
+                commentsData.forEach(comment => {
+                    // Use video_id (UUID) from database
+                    const videoKey = comment.video_id;
+                    if (!commentsMap[videoKey]) {
+                        commentsMap[videoKey] = [];
+                    }
+                    commentsMap[videoKey].push({
+                        id: comment.id,
+                        author_name: comment.author_name,
+                        author_avatar: comment.author_avatar,
+                        text_display: comment.text_display,
+                        published_at: comment.published_at,
+                        like_count: comment.like_count || 0
+                    });
+                });
+                console.log("📍 Comments grouped by video_id:", Object.keys(commentsMap));
+            } else {
+                console.warn("⚠️ No comments found in database");
+            }
+            
+            return commentsMap;
+        } catch (err) {
+            console.error("Error loading comments:", err);
+            return {};
+        }
     };
 
     const loadFromDB = async (userId: string) => {
@@ -111,14 +167,28 @@ export const useYouTubeData = () => {
                 .order('date', { ascending: true })
                 .limit(30);
 
-            // Load Videos
-            const { data: dbVideos } = await supabase
+            // Load Videos with latest engagement metrics
+            const { data: dbVideos, error: videosError } = await supabase
                 .from('content_items')
-                .select('*, content_snapshots(views, likes, comments, recorded_at)')
+                .select(`
+                    *,
+                    content_snapshots (
+                        views,
+                        likes,
+                        comments
+                    )
+                `)
                 .eq('account_id', account.id)
                 .eq('type', 'video')
                 .order('published_at', { ascending: false })
                 .limit(50);
+            if (videosError) {
+                console.error('Error fetching YouTube videos:', videosError);
+            }
+
+
+            // Load Comments
+            const commentsData = await loadCommentsFromDB();
 
             // Load AI Insights
             const insights = await loadInsightsFromDB(account.id);
@@ -132,18 +202,40 @@ export const useYouTubeData = () => {
             }));
 
             const topVideos: VideoStats[] = (dbVideos || []).map(v => {
-                const snapshots = v.content_snapshots || [];
-                const latestSnap = [...snapshots].sort((a: any, b: any) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())[0];
+                // Get the latest snapshot for this video (most recent engagement metrics)
+                const latestSnapshot = v.content_snapshots && v.content_snapshots.length > 0
+                    ? v.content_snapshots[v.content_snapshots.length - 1]
+                    : null;
+
                 return {
                     id: v.external_id,
                     title: v.title,
                     thumbnailUrl: v.thumbnail_url,
                     publishedAt: v.published_at,
-                    views: latestSnap?.views || 0,
-                    likes: latestSnap?.likes || 0,
-                    comments: latestSnap?.comments || 0
+                    views: latestSnapshot?.views || 0,
+                    likes: latestSnapshot?.likes || 0,
+                    comments: latestSnapshot?.comments || 0
                 };
             });
+
+            // Map comments by external_id (YouTube video ID) instead of database UUID
+            const commentsMapByExternalId: Record<string, VideoComment[]> = {};
+            if (dbVideos && dbVideos.length > 0) {
+                dbVideos.forEach(video => {
+                    const dbVideoId = video.id; // UUID from database
+                    const externalId = video.external_id; // YouTube video ID
+                    
+                    if (commentsData[dbVideoId] && commentsData[dbVideoId].length > 0) {
+                        commentsMapByExternalId[externalId] = commentsData[dbVideoId];
+                        console.log(`✅ Mapped ${commentsData[dbVideoId].length} comments for video ${externalId}`);
+                    }
+                });
+            }
+
+            console.log("📝 Raw Comments Data - Video IDs with comments:", Object.keys(commentsData));
+            console.log("🎥 Total videos fetched:", dbVideos?.length || 0);
+            console.log("🎬 Videos with mapped comments:", Object.keys(commentsMapByExternalId));
+            console.log("💬 Final Comments Map:", Object.keys(commentsMapByExternalId).length > 0 ? commentsMapByExternalId : "NO COMMENTS");
 
             let overview = null;
             if (dbSnapshot) {
@@ -161,7 +253,8 @@ export const useYouTubeData = () => {
                 overview,
                 history,
                 topVideos,
-                insights
+                insights,
+                comments: commentsMapByExternalId
             };
 
         } catch (dbErr) {
@@ -195,19 +288,41 @@ export const useYouTubeData = () => {
                 return;
             }
 
-            // Only send session tokens if the current active provider is Google.
-            // If the user is logged in via Facebook (linking), we shouldn't send the Facebook token.
-            const isGoogleSession = currentSession.user?.app_metadata?.provider === 'google';
-            const accessToken = isGoogleSession ? currentSession.provider_token : undefined;
-            const refreshToken = isGoogleSession ? currentSession.provider_refresh_token : undefined;
+            const { accessToken, refreshToken, source } = await resolveGoogleTokens(
+                userId,
+                currentSession.provider_token,
+                currentSession.provider_refresh_token
+            );
 
-            const { data: syncResult, error: syncError } = await supabase.functions.invoke('youtube-sync', {
-                body: { 
+            if (!accessToken) {
+                console.warn("No Google access token available (session or stored). Skipping YouTube sync.");
+                return;
+            }
+
+            if (source === 'stored') {
+                console.log("Using stored Google token for YouTube sync.");
+            }
+
+            // Use backend API instead of Supabase Edge Function (better CORS handling)
+            const response = await fetch(API_ENDPOINTS.YOUTUBE.SYNC, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
                     user_id: userId,
                     access_token: accessToken,
                     refresh_token: refreshToken
-                }
+                })
             });
+
+            if (!response.ok) {
+                throw new Error(`YouTube sync failed: ${response.status} ${response.statusText}`);
+            }
+
+            const syncResult = await response.json();
+            const syncError = null;
 
             if (syncError) {
                 // Try to extract body from FunctionsHttpError
@@ -224,7 +339,45 @@ export const useYouTubeData = () => {
             }
 
             console.log("Sync Complete:", syncResult);
-            // 3. Re-fetch from DB after sync
+            
+            // 3. Trigger Analytics Insights Calculation
+            console.log("Triggering analytics insights calculation...");
+            try {
+                // Load the account to get account_id for analytics
+                const { data: account } = await supabase
+                    .from('connected_accounts')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .eq('platform', 'youtube')
+                    .maybeSingle();
+
+                if (account) {
+                    const analyticsResponse = await fetch(API_ENDPOINTS.ANALYTICS.PROCESS, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            account_id: account.id
+                        })
+                    });
+                    
+                    if (analyticsResponse.ok) {
+                        const analyticsResult = await analyticsResponse.json();
+                        console.log("Analytics Processing Complete:", analyticsResult);
+                    } else {
+                        const errorText = await analyticsResponse.text();
+                        console.warn("Analytics processing returned error:", analyticsResponse.status, errorText);
+                    }
+                } else {
+                    console.warn("No YouTube account found for analytics processing");
+                }
+            } catch (analyticsErr) {
+                console.warn("Failed to calculate analytics insights:", analyticsErr);
+                // Don't fail the whole sync if analytics fails
+            }
+            
+            // 4. Re-fetch from DB after sync and analytics
             const freshData = await loadFromDB(userId);
             if (freshData) {
                 setData(prev => ({ ...prev, ...freshData, loading: false }));

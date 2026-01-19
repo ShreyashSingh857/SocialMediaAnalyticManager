@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Upload, Image as ImageIcon, CheckCircle, AlertCircle, Loader2, ArrowLeft, Star, ThumbsUp, ThumbsDown, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../lib/config';
 
 interface AnalysisResult {
     score: number;
@@ -37,7 +38,7 @@ export const ThumbnailRater: React.FC = () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://localhost:8000/api/v1/ai/analyze-thumbnail', {
+            const response = await fetch(API_ENDPOINTS.AI.ANALYZE_THUMBNAIL, {
                 method: 'POST',
                 body: formData,
             });

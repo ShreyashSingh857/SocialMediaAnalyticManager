@@ -1,19 +1,21 @@
 import React from 'react';
-import { Facebook, Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User } from 'lucide-react';
+import { Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
-    const { signInWithGoogle, signInWithFacebook, user } = useAuth();
+    const { signInWithGoogle, unlinkIdentity, user } = useAuth();
     const [linking, setLinking] = React.useState<string | null>(null);
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+    
+    // Check if providers are linked
+    const hasGoogleLinked = user?.identities?.some((id: any) => id.provider === 'google');
 
-    const handleLink = async (provider: 'google' | 'facebook') => {
+    const handleLink = async (provider: 'google') => {
         if (linking) return;
         setLinking(provider);
         setErrorMsg(null);
         try {
-            if (provider === 'google') await signInWithGoogle();
-            else await signInWithFacebook();
+            await signInWithGoogle();
         } catch (error: any) {
             console.error('Linking error:', error);
             if (error.message?.includes('Manual linking is disabled')) {
@@ -21,6 +23,24 @@ export const Settings: React.FC = () => {
             } else {
                 setErrorMsg(`Connection failed: ${error.message}`);
             }
+            setLinking(null);
+        }
+    };
+    
+    const handleUnlink = async (provider: 'google') => {
+        if (linking) return;
+        if (!confirm(`Are you sure you want to disconnect Google/YouTube? This will remove access to YouTube analytics.`)) {
+            return;
+        }
+        setLinking(provider);
+        setErrorMsg(null);
+        try {
+            await unlinkIdentity(provider);
+            alert(`Google/YouTube disconnected successfully!`);
+        } catch (error: any) {
+            console.error('Unlinking error:', error);
+            setErrorMsg(`Failed to disconnect: ${error.message}`);
+        } finally {
             setLinking(null);
         }
     };
@@ -85,20 +105,22 @@ export const Settings: React.FC = () => {
                                     )}
                                 </button>
 
-                                <button 
-                                    onClick={() => handleLink('facebook')} 
-                                    disabled={!!linking}
-                                    className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-[#1877F2]/20 transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {linking === 'facebook' ? (
-                                        <span>Connecting...</span>
-                                    ) : (
-                                        <>
-                                            <Facebook className="w-5 h-5" />
-                                            <span>Connect Facebook</span>
-                                        </>
-                                    )}
-                                </button>
+                                {hasGoogleLinked && (
+                                    <button 
+                                        onClick={() => handleUnlink('google')} 
+                                        disabled={!!linking}
+                                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-red-600/20 transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {linking === 'google' ? (
+                                            <span>Disconnecting...</span>
+                                        ) : (
+                                            <>
+                                                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+                                                <span>Disconnect Google</span>
+                                            </>
+                                        )}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -11,10 +11,15 @@ const AuthCallback = () => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     useEffect(() => {
+        console.log('🔍 Full callback URL:', window.location.href);
+        
         // Build URLSearchParams from both search and hash
         const params = new URLSearchParams(window.location.search);
         const hash = window.location.hash.substring(1); // remove #
         const hashParams = new URLSearchParams(hash);
+        
+        console.log('🔍 Hash params:', Object.fromEntries(hashParams.entries()));
+        console.log('🔍 Query params:', Object.fromEntries(params.entries()));
         
         const error = params.get('error') || hashParams.get('error');
         const errorDescription = params.get('error_description') || hashParams.get('error_description');
@@ -27,6 +32,40 @@ const AuthCallback = () => {
             setStatus("Authentication Failed");
             setErrorMsg(userFriendlyError || "Unknown error occurred during login.");
             return;
+        }
+
+        // Capture provider token from URL hash (for linkIdentity flow)
+        const providerToken = hashParams.get('provider_token');
+        const allHashKeys = Array.from(hashParams.keys()).join(', ');
+        const debugInfo = `
+🔍 OAUTH CALLBACK DEBUG:
+- Full URL: ${window.location.href}
+- Hash keys: ${allHashKeys || 'NONE'}
+- Provider token: ${providerToken ? providerToken.substring(0, 30) + '...' : 'NULL'}
+- Is Facebook token: ${providerToken ? (providerToken.startsWith('EAA') || providerToken.startsWith('IGQAZ') || providerToken.startsWith('IG')) : 'N/A'}
+        `;
+        
+        console.log(debugInfo);
+        
+        // Store debug info temporarily
+        try {
+            window.localStorage.setItem('last_oauth_debug', debugInfo);
+        } catch (e) {
+            // ignore
+        }
+        
+        console.log('🎫 Provider token from URL:', providerToken ? providerToken.substring(0, 30) + '...' : 'NULL');
+        
+        if (providerToken && (providerToken.startsWith('EAA') || providerToken.startsWith('IGQAZ') || providerToken.startsWith('IG'))) {
+            try {
+                window.localStorage.setItem('fb_access_token', providerToken);
+                window.localStorage.setItem('pending_facebook_link', '1');
+                console.log('✅ Captured Facebook token from callback URL:', providerToken.substring(0, 20) + '...');
+            } catch (e) {
+                console.error('❌ Failed to store Facebook token from callback', e);
+            }
+        } else {
+            console.warn('⚠️ No valid Facebook provider token found in callback URL');
         }
 
         const handleAuthCallback = async () => {

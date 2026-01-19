@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 interface ProfileData {
   name: string;
   age: string;
-  instagram: string;
   country: string;
   location: string;
   description: string;
@@ -19,7 +18,6 @@ const ProfileSetup = () => {
   const [formData, setFormData] = useState<ProfileData>({
     name: '',
     age: '',
-    instagram: '',
     country: '',
     location: '',
     description: '',
@@ -89,7 +87,7 @@ const ProfileSetup = () => {
       case 3:
         return formData.country.trim() !== '' && formData.location.trim() !== '';
       case 4:
-        return formData.instagram.trim() !== '' && formData.description.trim() !== '';
+        return formData.description.trim() !== '';
       case 5:
         return formData.consent;
       default:
@@ -137,7 +135,6 @@ const ProfileSetup = () => {
         id: user.id,
         full_name: formData.name,
         age: parseInt(formData.age),
-        instagram: formData.instagram,
         country: formData.country,
         location: formData.location,
         description: formData.description,
@@ -309,25 +306,9 @@ const ProfileSetup = () => {
             </div>
           )}
 
-          {/* STEP 4: CONTENT */}
+          {/* STEP 4: CONTENT & DESCRIPTION */}
           {currentStep === 4 && (
             <div className="space-y-6 animate-fade-in">
-              <div className="space-y-2">
-                <label htmlFor="instagram" className="block text-sm font-medium text-gray-300">Instagram Username</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-3.5 text-gray-500">@</span>
-                  <input
-                    type="text"
-                    id="instagram"
-                    name="instagram"
-                    className="w-full bg-black/20 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
-                    placeholder="username"
-                    value={formData.instagram}
-                    onChange={handleChange}
-                    autoFocus
-                  />
-                </div>
-              </div>
               <div className="space-y-2">
                 <label htmlFor="contentType" className="block text-sm font-medium text-gray-300">Type of Content</label>
                 <select

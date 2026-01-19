@@ -7,7 +7,9 @@ app = FastAPI(title="SocialManager AI Service")
 # Configure CORS
 origins = [
     "http://localhost:5173",  # React Client
+    "http://localhost:5174",  # React Client (alternate port)
     "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
 ]
 
 app.add_middleware(
@@ -22,10 +24,11 @@ app.add_middleware(
 def read_root():
     return {"message": "SocialManager AI Service Running"}
 
-from app.api.endpoints import analytics, ai
+from app.api.endpoints import analytics, ai, youtube
 
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["ai"])
+app.include_router(youtube.router, prefix="/api/v1/youtube", tags=["youtube"])
 
 # Alias app to main to allow 'uvicorn app.main:main' to work
 main = app

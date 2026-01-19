@@ -4,7 +4,6 @@ import { DashboardSkeleton } from '../components/LoadingSkeleton';
 import { RefreshIndicator } from '../components/RefreshIndicator';
 import { motion } from 'framer-motion';
 import {
-    Instagram,
     MoreHorizontal,
     MapPin
 } from 'lucide-react';
@@ -131,11 +130,6 @@ const Dashboard = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
-                                <Instagram className="w-5 h-5 text-purple-400" />
-                                <span className="text-sm flex-1">{profile?.instagram || '@username'}</span>
-                                <span className="text-xs text-blue-400 cursor-pointer">Link</span>
-                            </div>
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
                                 <MapPin className="w-5 h-5 text-blue-400" />
                                 <span className="text-sm">{profile?.location || 'Location not set'}</span>

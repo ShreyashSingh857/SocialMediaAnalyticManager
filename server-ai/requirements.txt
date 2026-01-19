@@ -7,3 +7,4 @@ pandas
 pydantic
 pydantic-settings
 python-multipart
+httpx
