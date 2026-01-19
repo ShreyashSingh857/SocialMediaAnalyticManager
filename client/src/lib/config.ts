@@ -7,9 +7,11 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_URL || 
   'http://localhost:8000';
 
+const YOUTUBE_SYNC_OVERRIDE = import.meta.env.VITE_YOUTUBE_SYNC_URL;
+
 export const API_ENDPOINTS = {
   YOUTUBE: {
-    SYNC: `${API_BASE_URL}/api/v1/youtube/sync`,
+    SYNC: YOUTUBE_SYNC_OVERRIDE || `${API_BASE_URL}/api/v1/youtube/sync`,
   },
   AI: {
     GENERATE_SCRIPT: `${API_BASE_URL}/api/v1/ai/generate-script`,

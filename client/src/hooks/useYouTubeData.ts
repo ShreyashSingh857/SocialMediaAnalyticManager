@@ -304,6 +304,7 @@ export const useYouTubeData = () => {
             }
 
             // Use backend API instead of Supabase Edge Function (better CORS handling)
+            console.log("Using sync endpoint:", API_ENDPOINTS.YOUTUBE.SYNC);
             const response = await fetch(API_ENDPOINTS.YOUTUBE.SYNC, {
                 method: 'POST',
                 headers: {
@@ -339,6 +340,11 @@ export const useYouTubeData = () => {
             }
 
             console.log("Sync Complete:", syncResult);
+            if (Object.prototype.hasOwnProperty.call(syncResult as any, 'comments_debug')) {
+                console.log("Comments Debug:", (syncResult as any).comments_debug);
+            } else {
+                console.warn("No comments_debug in sync response.");
+            }
             
             // 3. Trigger Analytics Insights Calculation
             console.log("Triggering analytics insights calculation...");
