@@ -20,7 +20,7 @@
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-purple-500;
   }
 }
 
@@ -50,4 +50,10 @@ body {
     radial-gradient(circle at 85% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 50%);
   background-attachment: fixed;
   overflow-x: hidden;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
