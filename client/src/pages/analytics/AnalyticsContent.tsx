@@ -102,7 +102,7 @@ export const AnalyticsContent: React.FC = () => {
                                     labelStyle={{ color: '#9ca3af' }}
                                 />
                                 <Scatter name="Videos" data={insights.engagement?.engagement_quality || []} fill="#10b981">
-                                    {insights.engagement?.engagement_quality?.map((_, index) => (
+                                    {insights.engagement?.engagement_quality?.map((_entry: { likability: number; discussability: number }, index: number) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={index % 2 === 0 ? '#22d3ee' : '#a855f7'}
