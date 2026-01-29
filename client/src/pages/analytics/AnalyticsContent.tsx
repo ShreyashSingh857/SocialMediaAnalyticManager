@@ -5,7 +5,7 @@ import { useYouTubeData } from '../../hooks/useYouTubeData';
 import { CommentsList } from '../../components/analytics/CommentsList';
 
 export const AnalyticsContent: React.FC = () => {
-    const { insights, topVideos, comments, debugInfo } = useYouTubeData();
+    const { insights, topVideos, comments } = useYouTubeData();
     const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
     if (!insights) return (
@@ -96,7 +96,7 @@ export const AnalyticsContent: React.FC = () => {
                     <div className="p-4 border-b border-white/5">
                         <h3 className="text-sm font-medium text-gray-300">Select Video</h3>
                     </div>
-                    <div className="max-h-[500px] overflow-y-auto divide-y divide-white/5">
+                    <div className="max-h-125 overflow-y-auto divide-y divide-white/5">
                         {topVideos.map((video) => (
                             <button
                                 key={video.id}

@@ -35,7 +35,7 @@ export const AnalyticsLayout: React.FC = () => {
                         <img src={overview.thumbnailUrl} alt="Channel" className="w-10 h-10 rounded-full border border-gray-700" />
                     )}
                     <div>
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                        <h1 className="text-2xl font-bold bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                             {overview?.channelName || 'Channel Analytics'}
                         </h1>
                         <p className="text-gray-500 text-sm">Overview of your content performance</p>

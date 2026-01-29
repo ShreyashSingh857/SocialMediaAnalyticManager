@@ -38,6 +38,9 @@ export const AnalyticsAudience: React.FC = () => {
         );
     }
 
+    const dayOfWeekAnalysis = insights?.weeklyTrend?.day_of_week_analysis ?? [];
+    const maxDayViews = Math.max(...dayOfWeekAnalysis.map((d) => d.views), 0);
+
     return (
         <div className="space-y-8">
             {/* Header / Refresh Status */}
@@ -85,9 +88,9 @@ export const AnalyticsAudience: React.FC = () => {
                 <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5">
                     <h3 className="text-gray-400 text-sm font-medium mb-4">Best Day to Post</h3>
                     <div className="h-64">
-                        {insights?.weeklyTrend?.day_of_week_analysis ? (
+                        {dayOfWeekAnalysis.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={insights.weeklyTrend.day_of_week_analysis}>
+                                <BarChart data={dayOfWeekAnalysis}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                                     <XAxis
                                         dataKey="day_name"
@@ -101,8 +104,8 @@ export const AnalyticsAudience: React.FC = () => {
                                         itemStyle={{ color: '#fff' }}
                                     />
                                     <Bar dataKey="views" fill="#3b82f6" radius={[4, 4, 0, 0]}>
-                                        {insights.weeklyTrend.day_of_week_analysis.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.views === Math.max(...(insights?.weeklyTrend?.day_of_week_analysis?.map(d => d.views) || [])) ? '#a855f7' : '#3b82f6'} />
+                                        {dayOfWeekAnalysis.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.views === maxDayViews ? '#a855f7' : '#3b82f6'} />
                                         ))}
                                     </Bar>
                                 </BarChart>
