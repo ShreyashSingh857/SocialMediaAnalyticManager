@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 
@@ -29,47 +29,11 @@ const CustomTooltip = ({ active, payload, label, formatter }: any) => {
 };
 
 export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ title, data, color = "#3b82f6", valueFormatter }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [dimensions, setDimensions] = useState({ width: 800, height: 320 });
-
-    useEffect(() => {
-        const element = containerRef.current;
-        if (!element) return;
-
-        const updateDimensions = () => {
-            const width = element.offsetWidth;
-            const height = element.offsetHeight || 320;
-            
-            // Ensure minimum dimensions to prevent recharts warnings
-            setDimensions({ 
-                width: Math.max(width, 300),
-                height: Math.max(height, 200)
-            });
-        };
-
-        // Initial check with delay to allow layout
-        updateDimensions();
-        const initialTimer = setTimeout(updateDimensions, 100);
-
-        // ResizeObserver for dynamic resizing
-        const resizeObserver = new ResizeObserver(updateDimensions);
-        resizeObserver.observe(element);
-
-        return () => {
-            clearTimeout(initialTimer);
-            resizeObserver.disconnect();
-        };
-    }, []);
-
     return (
         <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5 flex flex-col">
             <h3 className="text-gray-400 text-sm font-medium mb-6">{title}</h3>
             {/* Container with guaranteed minimum dimensions */}
-            <div 
-                ref={containerRef} 
-                className="flex-1 w-full min-h-80 min-w-0"
-                style={{ minHeight: '320px' }}
-            >
+            <div className="flex-1 w-full min-h-80 min-w-0">
                 {data && data.length > 0 ? (
                     <ResponsiveContainer width="100%" height={320} minWidth={300} debounce={300}>
                             <AreaChart

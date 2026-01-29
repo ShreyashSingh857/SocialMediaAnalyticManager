@@ -164,16 +164,16 @@ const ProfileSetup = () => {
     }
   };
 
-  // Calculate progress percentage
-  const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  const progressWidthClasses = ['w-0', 'w-1/4', 'w-1/2', 'w-3/4', 'w-full'];
+  const progressWidthClass = progressWidthClasses[currentStep - 1] || 'w-0';
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-deep-bg text-white relative overflow-hidden">
 
       {/* Background Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-125 h-125 bg-purple-600/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-125 h-125 bg-blue-600/20 rounded-full blur-[100px]" />
       </div>
 
       <div className="w-full max-w-2xl glass-panel p-8 rounded-2xl relative z-10 animate-fade-in-up">
@@ -181,10 +181,7 @@ const ProfileSetup = () => {
         {/* Progress System */}
         <div className="mb-8">
           <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
+            <div className={`h-full bg-linear-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out ${progressWidthClass}`} />
           </div>
           <div className="flex justify-between mt-4 text-xs font-medium text-gray-400 uppercase tracking-wider">
             {['Identity', 'Visuals', 'Region', 'Content', 'Consent'].map((label, idx) => (
@@ -196,7 +193,7 @@ const ProfileSetup = () => {
         </div>
 
         <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mb-2">
+          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-gray-400 mb-2">
             Setup Profile
           </h2>
           <p className="text-gray-400">
@@ -388,7 +385,7 @@ const ProfileSetup = () => {
             ) : (
               <button
                 type="submit"
-                className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold hover:from-blue-500 hover:to-purple-500 transition-all shadow-lg shadow-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold hover:from-blue-500 hover:to-purple-500 transition-all shadow-lg shadow-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!formData.consent}
               >
                 Complete Setup

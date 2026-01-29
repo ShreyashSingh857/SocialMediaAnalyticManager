@@ -72,6 +72,12 @@ export const GeographySection: React.FC<GeographySectionProps> = ({
     const displayedCountries = sortedCountries.slice(0, showCount);
     const totalViews = data.countries.reduce((sum, c) => sum + c.views, 0);
 
+    const widthClasses = ['w-0', 'w-[10%]', 'w-[20%]', 'w-[30%]', 'w-[40%]', 'w-[50%]', 'w-[60%]', 'w-[70%]', 'w-[80%]', 'w-[90%]', 'w-full'];
+    const getWidthClass = (percentage: number) => {
+        const index = Math.min(10, Math.max(0, Math.round(percentage / 10)));
+        return widthClasses[index];
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -186,8 +192,7 @@ export const GeographySection: React.FC<GeographySectionProps> = ({
                                             <div className="flex items-center justify-end gap-2">
                                                 <div className="w-20 h-2 bg-white/10 rounded-full overflow-hidden">
                                                     <div
-                                                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-                                                        style={{ width: `${percentage}%` }}
+                                                        className={`h-full bg-linear-to-r from-blue-500 to-purple-500 ${getWidthClass(percentage)}`}
                                                     />
                                                 </div>
                                                 <span className="text-sm text-gray-400 w-12 text-right">

@@ -65,7 +65,7 @@ export const ScriptAssistant: React.FC = () => {
                     Back to AI Studio
                 </Link>
 
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent flex items-center gap-3">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent flex items-center gap-3">
                     <Video className="text-pink-400" />
                     Script Assistant
                 </h1>
@@ -122,7 +122,7 @@ export const ScriptAssistant: React.FC = () => {
                             disabled={loading}
                             className={`
                                 w-full
-                                bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500
+                                bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500
                                 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-pink-500/20
                                 transition-all duration-300 flex items-center justify-center gap-2
                                 ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
@@ -154,7 +154,7 @@ export const ScriptAssistant: React.FC = () => {
                         </div>
                     ) : (
                         !loading && (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-2xl p-12 min-h-[400px]">
+                            <div className="h-full flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-2xl p-12 min-h-100">
                                 <Scroll size={48} className="mb-4 opacity-20" />
                                 <p>Your generated script will appear here</p>
                             </div>
@@ -162,7 +162,7 @@ export const ScriptAssistant: React.FC = () => {
                     )}
 
                     {loading && (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400 min-h-[400px]">
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400 min-h-100">
                             <motion.div
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}

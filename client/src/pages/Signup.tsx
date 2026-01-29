@@ -104,19 +104,21 @@ const Signup: React.FC = () => {
 
                 <div className="flex items-center space-x-2 text-sm text-gray-400">
                     <input
+                        id="terms"
                         type="checkbox"
                         required
+                        aria-label="Agree to terms"
                         className="form-checkbox bg-transparent border-white/20 rounded text-neon-blue focus:ring-neon-blue"
                     />
-                    <span>
+                    <label htmlFor="terms">
                         I agree to the <a href="#" className="text-neon-blue hover:underline">Terms of Service</a> and <a href="#" className="text-neon-blue hover:underline">Privacy Policy</a>
-                    </span>
+                    </label>
                 </div>
 
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <CheckCircle size={20} />
                     <span>{loading ? "Creating Account..." : "Sign Up"}</span>

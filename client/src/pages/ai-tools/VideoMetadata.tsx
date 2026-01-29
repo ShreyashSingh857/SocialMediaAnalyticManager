@@ -61,7 +61,7 @@ export const VideoMetadata: React.FC = () => {
                     Back to AI Studio
                 </Link>
 
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-3">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-3">
                     <Sparkles className="text-blue-400" />
                     Video Metadata Optimizer
                 </h1>
@@ -94,7 +94,7 @@ export const VideoMetadata: React.FC = () => {
                                 onClick={handleGenerate}
                                 disabled={loading}
                                 className={`
-                                    bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500
+                                    bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500
                                     text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-500/20
                                     transition-all duration-300 flex items-center gap-2
                                     ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}
@@ -190,7 +190,7 @@ export const VideoMetadata: React.FC = () => {
                         </>
                     ) : (
                         !loading && (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-2xl p-12 min-h-[400px]">
+                            <div className="h-full flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-2xl p-12 min-h-100">
                                 <Sparkles size={48} className="mb-4 opacity-20" />
                                 <p>Optimized metadata will appear here</p>
                             </div>
@@ -198,7 +198,7 @@ export const VideoMetadata: React.FC = () => {
                     )}
 
                     {loading && (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400 min-h-[400px]">
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400 min-h-100">
                             <motion.div
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}

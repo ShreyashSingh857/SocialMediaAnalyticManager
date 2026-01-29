@@ -51,6 +51,39 @@ export const TrafficSourcesSection: React.FC<TrafficSourcesSectionProps> = ({
         playlist: '#06b6d4'
     };
 
+    const sourceBgClasses: Record<string, string> = {
+        youtube_search: 'bg-blue-500/20',
+        suggested_videos: 'bg-purple-500/20',
+        browse_features: 'bg-pink-500/20',
+        external: 'bg-amber-500/20',
+        direct: 'bg-emerald-500/20',
+        playlist: 'bg-cyan-500/20'
+    };
+
+    const sourceTextClasses: Record<string, string> = {
+        youtube_search: 'text-blue-400',
+        suggested_videos: 'text-purple-400',
+        browse_features: 'text-pink-400',
+        external: 'text-amber-400',
+        direct: 'text-emerald-400',
+        playlist: 'text-cyan-400'
+    };
+
+    const sourceFillClasses: Record<string, string> = {
+        youtube_search: 'bg-blue-500',
+        suggested_videos: 'bg-purple-500',
+        browse_features: 'bg-pink-500',
+        external: 'bg-amber-500',
+        direct: 'bg-emerald-500',
+        playlist: 'bg-cyan-500'
+    };
+
+    const widthClasses = ['w-0', 'w-[10%]', 'w-[20%]', 'w-[30%]', 'w-[40%]', 'w-[50%]', 'w-[60%]', 'w-[70%]', 'w-[80%]', 'w-[90%]', 'w-full'];
+    const getWidthClass = (percentage: number) => {
+        const index = Math.min(10, Math.max(0, Math.round(percentage / 10)));
+        return widthClasses[index];
+    };
+
     // Transform data for donut chart
     const chartData = data.map(item => ({
         label: formatSourceName(item.source),
@@ -90,7 +123,7 @@ export const TrafficSourcesSection: React.FC<TrafficSourcesSectionProps> = ({
                     transition={{ delay: 0.1 }}
                     className="space-y-4"
                 >
-                    <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 p-6 rounded-xl">
+                    <div className="bg-linear-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 p-6 rounded-xl">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="p-3 bg-orange-500/20 rounded-lg">
                                 <TrendingUp className="w-6 h-6 text-orange-400" />
@@ -120,10 +153,9 @@ export const TrafficSourcesSection: React.FC<TrafficSourcesSectionProps> = ({
                         >
                             <div className="flex items-center gap-3 mb-2">
                                 <div
-                                    className="p-2 rounded-lg"
-                                    style={{ backgroundColor: `${sourceColors[item.source]}20` }}
+                                    className={`p-2 rounded-lg ${sourceBgClasses[item.source] || 'bg-white/10'}`}
                                 >
-                                    <div style={{ color: sourceColors[item.source] }}>
+                                    <div className={sourceTextClasses[item.source] || 'text-white'}>
                                         {sourceIcons[item.source] || <TrendingUp className="w-5 h-5" />}
                                     </div>
                                 </div>
@@ -156,10 +188,9 @@ export const TrafficSourcesSection: React.FC<TrafficSourcesSectionProps> = ({
                     >
                         <div className="flex items-center gap-3 mb-3">
                             <div
-                                className="p-2.5 rounded-lg"
-                                style={{ backgroundColor: `${sourceColors[item.source]}20` }}
+                                className={`p-2.5 rounded-lg ${sourceBgClasses[item.source] || 'bg-white/10'}`}
                             >
-                                <div style={{ color: sourceColors[item.source] }}>
+                                <div className={sourceTextClasses[item.source] || 'text-white'}>
                                     {sourceIcons[item.source] || <TrendingUp className="w-5 h-5" />}
                                 </div>
                             </div>
@@ -178,11 +209,7 @@ export const TrafficSourcesSection: React.FC<TrafficSourcesSectionProps> = ({
                             </div>
                             <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full rounded-full transition-all duration-500"
-                                    style={{
-                                        width: `${item.percentage}%`,
-                                        backgroundColor: sourceColors[item.source]
-                                    }}
+                                    className={`h-full rounded-full transition-all duration-500 ${getWidthClass(item.percentage)} ${sourceFillClasses[item.source] || 'bg-indigo-500'}`}
                                 />
                             </div>
                             <p className="text-xs text-gray-400">
@@ -198,7 +225,7 @@ export const TrafficSourcesSection: React.FC<TrafficSourcesSectionProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-5"
+                className="bg-linear-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-5"
             >
                 <h3 className="text-sm font-semibold text-orange-300 mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />

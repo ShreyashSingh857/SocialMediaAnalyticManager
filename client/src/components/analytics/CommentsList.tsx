@@ -21,7 +21,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({ comments, videoTitle
 
     return (
         <div className="bg-[#12141a] rounded-2xl border border-white/5 overflow-hidden">
-            <div className="p-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+            <div className="p-4 border-b border-white/5 bg-white/2 flex items-center justify-between">
                 <h3 className="text-sm font-medium text-gray-300">
                     Latest Comments <span className="text-gray-500 font-normal ml-2">{videoTitle}</span>
                 </h3>
@@ -30,13 +30,13 @@ export const CommentsList: React.FC<CommentsListProps> = ({ comments, videoTitle
                 </span>
             </div>
 
-            <div className="max-h-[500px] overflow-y-auto divide-y divide-white/5 p-2">
+            <div className="max-h-125 overflow-y-auto divide-y divide-white/5 p-2">
                 {comments.map((comment) => (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         key={comment.id}
-                        className="p-4 hover:bg-white/[0.02] transition-colors rounded-lg group"
+                        className="p-4 hover:bg-white/2 transition-colors rounded-lg group"
                     >
                         <div className="flex gap-3">
                             <div className="shrink-0">
