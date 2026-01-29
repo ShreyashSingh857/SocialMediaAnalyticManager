@@ -1,6 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useYouTubeData } from '../hooks/useYouTubeData';
 import { DashboardSkeleton } from '../components/LoadingSkeleton';
+import { AnalyticsChart } from '../components/AnalyticsChart';
 import { motion } from 'framer-motion';
 import {
     MoreHorizontal,
@@ -13,7 +14,7 @@ import { TrendyContent } from '../components/dashboard/TrendyContent';
 
 const Dashboard = () => {
     const { profile } = useAuth();
-    const { overview, loading, refetch } = useYouTubeData();
+    const { overview, loading, refetch, history } = useYouTubeData();
 
     // Show skeleton during loading
     if (loading) {
@@ -39,6 +40,7 @@ const Dashboard = () => {
     ];
 
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const chartData = history.map((entry) => ({ date: entry.date, value: entry.views }));
 
     return (
         <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-sans relative overflow-hidden">
@@ -115,13 +117,15 @@ const Dashboard = () => {
                             {/* Optional Period Selector could go here */}
                         </div>
 
-                        {/* Dashed Chart Placeholder */}
-                        <div className="w-full h-80 rounded-xl border-2 border-dashed border-white/10 bg-white/1 flex flex-col items-center justify-center text-gray-500 gap-3 hover:border-white/20 transition-colors cursor-default group">
-                            <div className="p-4 rounded-full bg-white/5 text-white/20 group-hover:text-cyan-400/50 group-hover:bg-cyan-400/10 transition-all">
-                                <TrendingUp className="w-8 h-8" />
-                            </div>
-                            <span className="text-sm font-medium">Analytics Chart Placeholder</span>
-                        </div>
+                        <AnalyticsChart
+                            title="Views (Last 30 Days)"
+                            data={chartData}
+                            color="#22d3ee"
+                            valueFormatter={(val) => new Intl.NumberFormat('en', { notation: 'compact' }).format(val)}
+                            variant="embedded"
+                            showTitle={true}
+                            chartHeight={260}
+                        />
                     </motion.div>
 
                     {/* My Profile (Right - 1/3 width) */}

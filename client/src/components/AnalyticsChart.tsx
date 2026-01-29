@@ -12,6 +12,10 @@ interface AnalyticsChartProps {
     data: DataPoint[];
     valueFormatter?: (value: number) => string;
     color?: string;
+    variant?: 'card' | 'embedded';
+    showTitle?: boolean;
+    containerClassName?: string;
+    chartHeight?: number;
 }
 
 const CustomTooltip = ({ active, payload, label, formatter }: any) => {
@@ -28,14 +32,33 @@ const CustomTooltip = ({ active, payload, label, formatter }: any) => {
     return null;
 };
 
-export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ title, data, color = "#3b82f6", valueFormatter }) => {
+export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
+    title,
+    data,
+    color = "#3b82f6",
+    valueFormatter,
+    variant = 'card',
+    showTitle = true,
+    containerClassName = '',
+    chartHeight = 320
+}) => {
+    const wrapperClassName = variant === 'card'
+        ? 'bg-[#12141a] p-6 rounded-2xl border border-white/5 flex flex-col'
+        : `flex flex-col ${containerClassName}`.trim();
+
+    const chartContainerClassName = variant === 'card'
+        ? 'flex-1 w-full min-h-80 min-w-0'
+        : 'w-full min-w-0';
+
     return (
-        <div className="bg-[#12141a] p-6 rounded-2xl border border-white/5 flex flex-col">
-            <h3 className="text-gray-400 text-sm font-medium mb-6">{title}</h3>
+        <div className={wrapperClassName}>
+            {showTitle && (
+                <h3 className="text-gray-400 text-sm font-medium mb-6">{title}</h3>
+            )}
             {/* Container with guaranteed minimum dimensions */}
-            <div className="flex-1 w-full min-h-80 min-w-0">
+            <div className={chartContainerClassName}>
                 {data && data.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={320} minWidth={300} debounce={300}>
+                    <ResponsiveContainer width="100%" height={chartHeight} minWidth={300} debounce={300}>
                             <AreaChart
                                 data={data}
                                 margin={{
