@@ -3,7 +3,8 @@ import { Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User, 
 import { useAuth } from '../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
-    const { signInWithGoogle, unlinkIdentity, user } = useAuth();
+    const { signInWithGoogle, unlinkIdentity, user, profile } = useAuth();
+    const navigate = useNavigate();
     const [linking, setLinking] = React.useState<string | null>(null);
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 

@@ -59,6 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('🔄 Provider Refresh Token:', session?.provider_refresh_token);
       console.log('👥 User Identities:', session?.user?.identities);
       console.log('🔍 Identity Count:', session?.user?.identities?.length);
+
+            setSession(session ?? null);
+            setUser(session?.user ?? null);
             
             // Display OAuth callback debug if available
             const oauthDebug = localStorage.getItem('last_oauth_debug');
@@ -158,6 +161,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const { error } = await supabase.auth.signOut();
             if (error) throw error;
+
+            setUser(null);
+            setSession(null);
+            setProfile(null);
         } catch (error) {
             console.error('Error signing out:', error);
             throw error;

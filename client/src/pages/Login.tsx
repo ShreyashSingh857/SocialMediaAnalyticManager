@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/Input';
 import { Mail, Lock, LogIn, Loader } from 'lucide-react';
@@ -8,8 +8,10 @@ import { supabase } from '../lib/supabase';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { signInWithGoogle } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [oauthLoading, setOauthLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,28 @@ const Login: React.FC = () => {
                 password,
             });
             if (error) throw error;
-            navigate('/profile-setup');
+
+            const { data: sessionData } = await supabase.auth.getSession();
+            const user = sessionData.session?.user;
+
+            if (!user) {
+                navigate('/login');
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            const fromPath = (location.state as any)?.from?.pathname;
+
+            if (profile) {
+                navigate(fromPath || '/');
+            } else {
+                navigate('/profile-setup');
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -33,10 +56,14 @@ const Login: React.FC = () => {
     };
 
     const handleGoogleLogin = async () => {
+        if (oauthLoading) return;
         try {
+            setOauthLoading(true);
             await signInWithGoogle();
         } catch (error) {
             console.error(error);
+            setError('Google sign-in failed. Please try again.');
+            setOauthLoading(false);
         }
     };
 
@@ -86,8 +113,8 @@ const Login: React.FC = () => {
 
                 <button
                     type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading || oauthLoading}
+                    className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? <Loader className="animate-spin" size={20} /> : <LogIn size={20} />}
                     <span>{loading ? 'Logging in...' : 'Log In'}</span>
@@ -106,7 +133,7 @@ const Login: React.FC = () => {
 
 
                 <div className="mt-6">
-                    <button onClick={handleGoogleLogin} className="w-full flex items-center justify-center py-2.5 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/30 transition-all text-white space-x-3">
+                    <button onClick={handleGoogleLogin} disabled={loading || oauthLoading} className="w-full flex items-center justify-center py-2.5 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/30 transition-all text-white space-x-3 disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path
                                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -125,7 +152,7 @@ const Login: React.FC = () => {
                                 fill="#EA4335"
                             />
                         </svg>
-                        <span>Continue with Google</span>
+                        <span>{oauthLoading ? 'Connecting...' : 'Continue with Google'}</span>
                     </button>
                     {/* Facebook Login Removed from Login Page */}
                 </div>

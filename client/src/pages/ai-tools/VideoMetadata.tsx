@@ -134,7 +134,7 @@ export const VideoMetadata: React.FC = () => {
                                     {result.titles.map((title, index) => (
                                         <div key={index} className="flex items-center justify-between group p-2 hover:bg-white/5 rounded-lg transition-colors">
                                             <span className="text-gray-200">{title}</span>
-                                            <button onClick={() => copyToClipboard(title)} className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-colors p-1">
+                                            <button onClick={() => copyToClipboard(title)} className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-colors p-1" title="Copy Title">
                                                 <Copy size={14} />
                                             </button>
                                         </div>

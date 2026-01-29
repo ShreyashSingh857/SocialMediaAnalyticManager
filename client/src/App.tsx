@@ -8,6 +8,7 @@ import { VideoMetadata } from './pages/ai-tools/VideoMetadata';
 import { ThumbnailRater } from './pages/ai-tools/ThumbnailRater';
 import { ScriptAssistant } from './pages/ai-tools/ScriptAssistant';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 import AuthCallback from './pages/AuthCallback';
 import ProfileSetup from './components/ProfileSetup';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -43,6 +44,7 @@ function App() {
             <Route element={<SidebarLayout />}>
               <Route path="/social-connect" element={<Settings />} /> {/* Redirect or Alias if needed, or just replace */}
               <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/profile-setup" element={<ProfileSetup />} />
 
               {/* Nested Analytics Routes */}
