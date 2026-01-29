@@ -7,7 +7,7 @@ export const AIStudio: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-sans relative overflow-hidden">
             {/* Background effects */}
-            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-900/10 via-purple-900/5 to-transparent pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-96 bg-linear-to-br from-blue-900/10 via-purple-900/5 to-transparent pointer-events-none" />
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay" />
 
             <div className="max-w-7xl mx-auto relative z-10">
@@ -19,7 +19,7 @@ export const AIStudio: React.FC = () => {
                     </div>
                     <div className="mt-4">
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2">
-                            Creator <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Toolkit</span>
+                            Creator <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-purple-500">Toolkit</span>
                         </h1>
                         <p className="text-gray-400 text-lg max-w-2xl">
                             Supercharge your content creation with AI-powered tools designed to boost engagement and growth.
@@ -75,9 +75,9 @@ interface ToolCardProps {
 const ToolCard: React.FC<ToolCardProps> = ({ title, description, icon, color, status, delay = 0 }) => {
     // Subtle gradients for the cards
     const bgGradients = {
-        blue: 'from-blue-500/[0.08] to-transparent',
-        purple: 'from-purple-500/[0.08] to-transparent',
-        pink: 'from-pink-500/[0.08] to-transparent',
+        blue: 'from-blue-500/8 to-transparent',
+        purple: 'from-purple-500/8 to-transparent',
+        pink: 'from-pink-500/8 to-transparent',
     };
 
     const borderColors = {
@@ -98,10 +98,10 @@ const ToolCard: React.FC<ToolCardProps> = ({ title, description, icon, color, st
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -5 }}
-            className={`group relative h-full p-8 rounded-3xl border border-white/5 bg-gradient-to-b ${bgGradients[color]} backdrop-blur-sm transition-all duration-300 hover:shadow-2xl ${borderColors[color]}`}
+            className={`group relative h-full p-8 rounded-3xl border border-white/5 bg-linear-to-b ${bgGradients[color]} backdrop-blur-sm transition-all duration-300 hover:shadow-2xl ${borderColors[color]}`}
         >
             {/* Glow effect on hover */}
-            <div className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-b ${bgGradients[color]} pointer-events-none`} />
+            <div className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-linear-to-b ${bgGradients[color]} pointer-events-none`} />
 
             <div className="relative z-10 flex flex-col h-full">
                 <div className="flex justify-between items-start mb-6">

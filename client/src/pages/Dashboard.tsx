@@ -43,7 +43,7 @@ const Dashboard = () => {
     return (
         <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-sans relative overflow-hidden">
             {/* Background effects */}
-            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-900/10 via-purple-900/5 to-transparent pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-96 bg-linear-to-br from-blue-900/10 via-purple-900/5 to-transparent pointer-events-none" />
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay" />
 
             <div className="max-w-7xl mx-auto relative z-10 space-y-8">
@@ -82,7 +82,7 @@ const Dashboard = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className="group relative p-6 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-sm shadow-xl hover:-translate-y-1 hover:bg-white/[0.05] transition-all duration-300"
+                            className="group relative p-6 rounded-2xl bg-white/3 border border-white/10 backdrop-blur-sm shadow-xl hover:-translate-y-1 hover:bg-white/5 transition-all duration-300"
                         >
                             <div className="flex justify-between items-start mb-2">
                                 <span className="text-gray-400 text-sm font-medium tracking-wide uppercase">{stat.label}</span>
@@ -105,7 +105,7 @@ const Dashboard = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="lg:col-span-2 p-6 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-sm shadow-xl"
+                        className="lg:col-span-2 p-6 rounded-2xl bg-white/3 border border-white/10 backdrop-blur-sm shadow-xl"
                     >
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -116,7 +116,7 @@ const Dashboard = () => {
                         </div>
 
                         {/* Dashed Chart Placeholder */}
-                        <div className="w-full h-80 rounded-xl border-2 border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center text-gray-500 gap-3 hover:border-white/20 transition-colors cursor-default group">
+                        <div className="w-full h-80 rounded-xl border-2 border-dashed border-white/10 bg-white/1 flex flex-col items-center justify-center text-gray-500 gap-3 hover:border-white/20 transition-colors cursor-default group">
                             <div className="p-4 rounded-full bg-white/5 text-white/20 group-hover:text-cyan-400/50 group-hover:bg-cyan-400/10 transition-all">
                                 <TrendingUp className="w-8 h-8" />
                             </div>
@@ -129,11 +129,11 @@ const Dashboard = () => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="p-6 rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 backdrop-blur-md flex flex-col items-center text-center shadow-xl h-fit"
+                        className="p-6 rounded-2xl bg-linear-to-b from-white/6 to-white/2 border border-white/10 backdrop-blur-md flex flex-col items-center text-center shadow-xl h-fit"
                     >
                         <div className="w-full flex justify-between items-center mb-2">
                             <span className="text-xs font-bold uppercase tracking-wider text-gray-500">My Profile</span>
-                            <button className="text-gray-500 hover:text-white transition-colors">
+                            <button className="text-gray-500 hover:text-white transition-colors" aria-label="Profile options">
                                 <MoreHorizontal size={18} />
                             </button>
                         </div>

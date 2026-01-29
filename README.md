@@ -9,6 +9,8 @@ A comprehensive social media management platform that leverages AI to provide de
 - **Advanced Analytics**: Visualizations for views, engagement rates, subscriber growth, and more.
 - **Predictive Metrics**: estimated impact of future content based on historical data.
 - **Secure Authentication**: Robust user management via Supabase Auth.
+- **Creator Toolkit**: AI Studio tools for scripts, metadata, and thumbnail ratings.
+- **Profile Management**: Creator profile setup and quick access.
 
 ## 🛠️ Tech Stack
 
@@ -64,6 +66,8 @@ Run the development server:
 npm run dev
 ```
 
+The app will be available at http://localhost:5173/ (Vite will auto-increment if the port is in use).
+
 ### 2. Server AI Setup
 Navigate to the server-ai directory:
 
@@ -100,6 +104,31 @@ PORT=8000
 
 Run the FastAPI server:
 ```bash
+uvicorn app.main:app --reload
+```
+
+The API will be available at http://localhost:8000/.
+
+## ▲ Vercel Deployment (Frontend)
+
+This repo includes a Vercel configuration at `vercel.json` to build and serve the Vite app from the `client` folder.
+
+Recommended environment variables in Vercel (Project Settings → Environment Variables):
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+## ▶ Run Both (Local)
+
+In two terminals:
+
+```bash
+cd client
+npm run dev
+```
+
+```bash
+cd server-ai
 uvicorn app.main:app --reload
 ```
 

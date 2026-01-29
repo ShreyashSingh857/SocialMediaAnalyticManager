@@ -10,7 +10,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     className = '',
     variant = 'rectangular'
 }) => {
-    const baseClasses = 'animate-pulse bg-gradient-to-r from-white/5 via-white/10 to-white/5';
+    const baseClasses = 'animate-pulse bg-linear-to-r from-white/5 via-white/10 to-white/5';
 
     const variantClasses = {
         text: 'h-4 rounded',
@@ -78,7 +78,7 @@ export const DashboardSkeleton: React.FC = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="p-6 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-md h-fit"
+                    className="p-6 rounded-2xl bg-linear-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-md h-fit"
                 >
                     <div className="flex items-center justify-between mb-6">
                         <Skeleton className="h-5 w-24" variant="text" />

@@ -19,8 +19,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) =>
                         alt="Social Media Analytics"
                         className="w-full h-full object-cover opacity-80"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-deep-bg/90 to-deep-bg/40 mix-blend-multiply" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-deep-bg via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-r from-deep-bg/90 to-deep-bg/40 mix-blend-multiply" />
+                    <div className="absolute inset-0 bg-linear-to-t from-deep-bg via-transparent to-transparent" />
                 </div>
 
                 <div className="relative z-10">
@@ -41,7 +41,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) =>
                         className="text-5xl font-extrabold leading-tight"
                     >
                         Unlock the power of <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple text-neon">
+                        <span className="text-transparent bg-clip-text bg-linear-to-r from-neon-blue to-neon-purple text-neon">
                             Social Data
                         </span>
                     </motion.h2>

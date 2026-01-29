@@ -71,7 +71,7 @@ export const ThumbnailRater: React.FC = () => {
                     Back to AI Studio
                 </Link>
 
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent flex items-center gap-3">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent flex items-center gap-3">
                     <ImageIcon className="text-purple-400" />
                     Thumbnail Rater
                 </h1>
@@ -83,7 +83,7 @@ export const ThumbnailRater: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Upload Section */}
                 <div className="space-y-6">
-                    <div className="bg-[#12141a] p-8 rounded-2xl border border-white/5 flex flex-col items-center justify-center min-h-[400px]">
+                    <div className="bg-[#12141a] p-8 rounded-2xl border border-white/5 flex flex-col items-center justify-center min-h-100">
                         {!preview ? (
                             <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-white/5 transition-colors rounded-xl p-8 border-2 border-dashed border-white/10 hover:border-purple-500/50">
                                 <Upload size={48} className="text-gray-500 mb-4" />
@@ -109,7 +109,7 @@ export const ThumbnailRater: React.FC = () => {
                                 disabled={loading}
                                 className={`
                                     mt-6 w-full
-                                    bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500
+                                    bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500
                                     text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-purple-500/20
                                     transition-all duration-300 flex items-center justify-center gap-2
                                     ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
@@ -170,7 +170,7 @@ export const ThumbnailRater: React.FC = () => {
                                     <ul className="space-y-3">
                                         {result.pros.map((item, i) => (
                                             <li key={i} className="flex items-start text-gray-300 text-sm">
-                                                <CheckCircle size={14} className="mr-2 mt-1 text-green-500/50 flex-shrink-0" />
+                                                <CheckCircle size={14} className="mr-2 mt-1 text-green-500/50 shrink-0" />
                                                 {item}
                                             </li>
                                         ))}
@@ -186,7 +186,7 @@ export const ThumbnailRater: React.FC = () => {
                                     <ul className="space-y-3">
                                         {result.cons.map((item, i) => (
                                             <li key={i} className="flex items-start text-gray-300 text-sm">
-                                                <AlertCircle size={14} className="mr-2 mt-1 text-red-500/50 flex-shrink-0" />
+                                                <AlertCircle size={14} className="mr-2 mt-1 text-red-500/50 shrink-0" />
                                                 {item}
                                             </li>
                                         ))}
@@ -194,7 +194,7 @@ export const ThumbnailRater: React.FC = () => {
                                 </div>
 
                                 {/* Suggestions */}
-                                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-6 rounded-2xl border border-purple-500/20">
+                                <div className="bg-linear-to-br from-purple-500/10 to-pink-500/10 p-6 rounded-2xl border border-purple-500/20">
                                     <h3 className="flex items-center text-purple-300 font-semibold mb-4">
                                         <Lightbulb size={18} className="mr-2" />
                                         AI Suggestions
@@ -212,14 +212,14 @@ export const ThumbnailRater: React.FC = () => {
                         )}
 
                         {!result && !loading && (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-2xl p-12 min-h-[400px]">
+                            <div className="h-full flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-2xl p-12 min-h-100">
                                 <ImageIcon size={48} className="mb-4 opacity-20" />
                                 <p>Upload a thumbnail to see AI analysis</p>
                             </div>
                         )}
 
                         {loading && (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400 border border-white/5 rounded-2xl min-h-[400px]">
+                            <div className="h-full flex flex-col items-center justify-center text-gray-400 border border-white/5 rounded-2xl min-h-100">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-purple-500 blur-xl opacity-20 rounded-full animate-pulse"></div>
                                     <Loader2 size={48} className="animate-spin relative z-10 text-purple-400" />

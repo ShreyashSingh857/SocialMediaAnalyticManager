@@ -38,6 +38,9 @@ export const AnalyticsAudience: React.FC = () => {
         );
     }
 
+    const dayOfWeekAnalysis = insights?.weeklyTrend?.day_of_week_analysis ?? [];
+    const maxDayViews = Math.max(...dayOfWeekAnalysis.map((d) => d.views), 0);
+
     return (
         <div className="space-y-8">
             {/* Header / Refresh Status */}
@@ -52,7 +55,7 @@ export const AnalyticsAudience: React.FC = () => {
             {/* Growth & Habits Section (From Analytics) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Growth Card */}
-                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm relative overflow-hidden group hover:border-white/20 transition-all shadow-lg">
+                <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm relative overflow-hidden group hover:border-white/20 transition-all shadow-lg">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <TrendingUp size={100} className="text-blue-500" />
                     </div>
@@ -88,16 +91,16 @@ export const AnalyticsAudience: React.FC = () => {
                 </div>
 
                 {/* Day of Week Chart */}
-                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg hover:border-white/20 transition-all">
+                <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg hover:border-white/20 transition-all">
                     <div className="flex items-center gap-2 mb-6">
                         <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400"><Calendar size={18} /></div>
                         <h3 className="text-white font-semibold text-lg">Best Day to Post</h3>
                     </div>
 
                     <div className="h-64">
-                        {insights?.weeklyTrend?.day_of_week_analysis ? (
+                        {dayOfWeekAnalysis.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={insights.weeklyTrend.day_of_week_analysis}>
+                                <BarChart data={dayOfWeekAnalysis}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                                     <XAxis
                                         dataKey="day_name"
@@ -121,8 +124,8 @@ export const AnalyticsAudience: React.FC = () => {
                                         labelStyle={{ color: '#9ca3af' }}
                                     />
                                     <Bar dataKey="views" fill="#3b82f6" radius={[4, 4, 0, 0]}>
-                                        {insights.weeklyTrend.day_of_week_analysis.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.views === Math.max(...(insights?.weeklyTrend?.day_of_week_analysis?.map(d => d.views) || [])) ? '#a855f7' : '#3b82f6'} />
+                                        {dayOfWeekAnalysis.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.views === maxDayViews ? '#a855f7' : '#3b82f6'} />
                                         ))}
                                     </Bar>
                                 </BarChart>
@@ -139,7 +142,7 @@ export const AnalyticsAudience: React.FC = () => {
 
             {/* Sub-sections wrapped for styling consistency if needed, but keeping them direct as they are component calls */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
+                <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="p-2 bg-green-500/10 rounded-lg text-green-400"><Users size={18} /></div>
                         <h3 className="text-white font-semibold text-lg">Demographics</h3>
@@ -147,7 +150,7 @@ export const AnalyticsAudience: React.FC = () => {
                     <DemographicsSection data={demographics} loading={loading} />
                 </div>
 
-                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
+                <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="p-2 bg-pink-500/10 rounded-lg text-pink-400"><MapPin size={18} /></div>
                         <h3 className="text-white font-semibold text-lg">Geography</h3>
@@ -157,11 +160,11 @@ export const AnalyticsAudience: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
+                <div className="lg:col-span-2 bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
                     <TrafficSourcesSection data={trafficSources} loading={loading} />
                 </div>
 
-                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
+                <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="p-2 bg-orange-500/10 rounded-lg text-orange-400"><Monitor size={18} /></div>
                         <h3 className="text-white font-semibold text-lg">Devices</h3>
@@ -174,7 +177,7 @@ export const AnalyticsAudience: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
+            <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg">
                 <SubscriptionSection data={subscriptionSources} loading={loading} />
             </div>
         </div>

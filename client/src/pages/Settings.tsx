@@ -3,8 +3,7 @@ import { Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User, 
 import { useAuth } from '../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
-    const { signInWithGoogle, unlinkIdentity, user, profile } = useAuth();
-    const navigate = useNavigate();
+    const { signInWithGoogle, unlinkIdentity, user } = useAuth();
     const [linking, setLinking] = React.useState<string | null>(null);
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
@@ -49,7 +48,7 @@ export const Settings: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-sans relative overflow-hidden">
             {/* Background effects */}
-            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-900/10 via-purple-900/5 to-transparent pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-96 bg-linear-to-br from-blue-900/10 via-purple-900/5 to-transparent pointer-events-none" />
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay" />
 
             <div className="max-w-7xl mx-auto relative z-10">
@@ -67,7 +66,7 @@ export const Settings: React.FC = () => {
                     {/* Left Column (Wide) */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* Connected Accounts Card */}
-                        <div className="bg-white/[0.03] rounded-3xl border border-white/10 backdrop-blur-md shadow-xl overflow-hidden">
+                        <div className="bg-white/3 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl overflow-hidden">
                             <div className="p-8 border-b border-white/5">
                                 <h2 className="text-xl font-bold text-white flex items-center gap-3">
                                     <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
@@ -134,7 +133,7 @@ export const Settings: React.FC = () => {
                         </div>
 
                         {/* Profile Placeholder (Muted/Coming Soon) */}
-                        <div className="bg-white/[0.03] rounded-3xl border border-white/10 backdrop-blur-md overflow-hidden opacity-60">
+                        <div className="bg-white/3 rounded-3xl border border-white/10 backdrop-blur-md overflow-hidden opacity-60">
                             <div className="p-8 border-b border-white/5 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-white flex items-center gap-3">
                                     <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
@@ -153,7 +152,7 @@ export const Settings: React.FC = () => {
                     {/* Right Column (Info Stack) */}
                     <div className="space-y-6">
                         {/* Account Info Card */}
-                        <div className="bg-white/[0.03] p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl">
+                        <div className="bg-white/3 p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl">
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
                                 Account Info
@@ -174,7 +173,7 @@ export const Settings: React.FC = () => {
                         </div>
 
                         {/* Privacy & Security Card */}
-                        <div className="bg-white/[0.03] p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl">
+                        <div className="bg-white/3 p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl">
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <Shield size={14} />
                                 Privacy & Security

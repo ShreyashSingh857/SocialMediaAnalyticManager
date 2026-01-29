@@ -65,7 +65,7 @@ export const VideoPerformanceList: React.FC<VideoPerformanceListProps> = ({ vide
                             onClick={() => setSelectedVideo(video)}
                             className="flex items-start gap-4 p-3 hover:bg-white/5 rounded-xl transition-colors group cursor-pointer"
                         >
-                            <div className="relative w-32 aspect-video rounded-lg overflow-hidden flex-shrink-0 bg-gray-800">
+                            <div className="relative w-32 aspect-video rounded-lg overflow-hidden shrink-0 bg-gray-800">
                                 {video.thumbnailUrl ? (
                                     <ImageWithFallback src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
                                 ) : (
@@ -121,6 +121,7 @@ export const VideoPerformanceList: React.FC<VideoPerformanceListProps> = ({ vide
                             <button 
                                 onClick={() => setSelectedVideo(null)}
                                 className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                                aria-label="Close video details"
                             >
                                 <X size={20} />
                             </button>

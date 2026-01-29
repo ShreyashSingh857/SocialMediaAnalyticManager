@@ -45,11 +45,16 @@ export interface AIInsights {
             trend_slope: number;
             peak_date: string;
             peak_views: number;
+            momentum_percent?: number;
+            avd_minutes?: number;
+            sub_conversion_rate?: number;
         };
+        day_of_week_analysis?: { day_name: string; views: number }[];
         rolling_averages: { date: string; views_7d_avg: number }[];
     };
     engagement?: {
         average_engagement_rate: number;
+        engagement_quality?: { likability: number; discussability: number }[];
         top_engaged_videos: { id: string; title: string; engagement_rate: number }[];
     };
 }

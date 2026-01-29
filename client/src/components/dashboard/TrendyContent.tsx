@@ -106,7 +106,7 @@ export const TrendyContent: React.FC = () => {
 
     if (!session?.provider_token) {
         return (
-            <div className="bg-gradient-to-r from-red-500/10 to-transparent border border-white/5 rounded-2xl p-8 flex items-center gap-6">
+            <div className="bg-linear-to-r from-red-500/10 to-transparent border border-white/5 rounded-2xl p-8 flex items-center gap-6">
                 <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
                     <Play className="text-red-500 w-8 h-8 ml-1" />
                 </div>
@@ -126,7 +126,7 @@ export const TrendyContent: React.FC = () => {
             {/* Minimal Header */}
             <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-3">
-                    <div className="bg-gradient-to-br from-red-500 to-red-600 p-2.5 rounded-xl shadow-lg shadow-red-500/20">
+                    <div className="bg-linear-to-br from-red-500 to-red-600 p-2.5 rounded-xl shadow-lg shadow-red-500/20">
                         <TrendingUp className="text-white" size={20} />
                     </div>
                     <div>
@@ -138,7 +138,7 @@ export const TrendyContent: React.FC = () => {
                 <a
                     href="https://www.youtube.com/feed/trending"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg border border-white/5"
                 >
                     <span>View All</span>
@@ -176,7 +176,7 @@ export const TrendyContent: React.FC = () => {
                                 />
 
                                 {/* Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
                                 {/* Play Icon */}
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100">

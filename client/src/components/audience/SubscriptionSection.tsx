@@ -44,6 +44,20 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
         external: '#f59e0b'
     };
 
+    const sourceBgClasses: Record<string, string> = {
+        watch_page: 'bg-blue-500/20',
+        channel_page: 'bg-purple-500/20',
+        shorts: 'bg-pink-500/20',
+        external: 'bg-amber-500/20'
+    };
+
+    const sourceTextClasses: Record<string, string> = {
+        watch_page: 'text-blue-400',
+        channel_page: 'text-purple-400',
+        shorts: 'text-pink-400',
+        external: 'text-amber-400'
+    };
+
     // Transform data for donut chart
     const chartData = data.map(item => ({
         label: formatSourceName(item.source),
@@ -92,10 +106,9 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                         >
                             <div className="flex items-center gap-3 mb-2">
                                 <div
-                                    className="p-2 rounded-lg"
-                                    style={{ backgroundColor: `${sourceColors[item.source]}20` }}
+                                    className={`p-2 rounded-lg ${sourceBgClasses[item.source] || 'bg-white/10'}`}
                                 >
-                                    <div style={{ color: sourceColors[item.source] }}>
+                                    <div className={sourceTextClasses[item.source] || 'text-white'}>
                                         {sourceIcons[item.source] || <UserPlus className="w-5 h-5" />}
                                     </div>
                                 </div>
@@ -124,7 +137,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 rounded-lg p-4"
+                className="bg-linear-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 rounded-lg p-4"
             >
                 <p className="text-sm text-pink-300">
                     <strong>Tip:</strong> Focus on optimizing the sources that bring the most subscribers.

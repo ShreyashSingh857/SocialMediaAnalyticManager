@@ -29,7 +29,7 @@ const ForgotPassword: React.FC = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-neon-blue to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2"
+                        className="w-full bg-linear-to-r from-neon-blue to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-neon-blue/50 transition-all duration-300 flex items-center justify-center space-x-2"
                     >
                         <Send size={20} />
                         <span>Send Reset Link</span>

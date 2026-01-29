@@ -5,7 +5,7 @@ import { useYouTubeData } from '../../hooks/useYouTubeData';
 import { CommentsList } from '../../components/analytics/CommentsList';
 
 export const AnalyticsContent: React.FC = () => {
-    const { insights, topVideos, comments, debugInfo } = useYouTubeData();
+    const { insights, topVideos, comments } = useYouTubeData();
     const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
     if (!insights) return (
@@ -24,7 +24,7 @@ export const AnalyticsContent: React.FC = () => {
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Quality Card */}
-                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm relative overflow-hidden shadow-lg group hover:border-white/20 transition-all">
+                <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm relative overflow-hidden shadow-lg group hover:border-white/20 transition-all">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Clock size={100} className="text-purple-500" />
                     </div>
@@ -56,14 +56,14 @@ export const AnalyticsContent: React.FC = () => {
                                 <span className="text-sm font-normal text-gray-500">per view</span>
                             </div>
                             <div className="w-full h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 w-[65%] rounded-full"></div>
+                                <div className="h-full bg-linear-to-r from-purple-500 to-cyan-500 w-[65%] rounded-full"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Engagement Matrix */}
-                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg hover:border-white/20 transition-all">
+                <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg hover:border-white/20 transition-all">
                     <div className="flex items-center gap-2 mb-6">
                         <div className="p-2 bg-green-500/10 rounded-lg text-green-400"><BarChart2 size={18} /></div>
                         <h3 className="text-white font-semibold text-lg">Engagement Matrix</h3>
@@ -102,7 +102,7 @@ export const AnalyticsContent: React.FC = () => {
                                     labelStyle={{ color: '#9ca3af' }}
                                 />
                                 <Scatter name="Videos" data={insights.engagement?.engagement_quality || []} fill="#10b981">
-                                    {insights.engagement?.engagement_quality?.map((entry, index) => (
+                                    {insights.engagement?.engagement_quality?.map((_, index) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={index % 2 === 0 ? '#22d3ee' : '#a855f7'}
@@ -120,19 +120,19 @@ export const AnalyticsContent: React.FC = () => {
             {/* Video Deep Dive & Comments Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* List of Recent Videos to Select */}
-                <div className="bg-white/[0.03] rounded-2xl border border-white/10 backdrop-blur-sm overflow-hidden flex flex-col h-[600px] shadow-lg">
-                    <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+                <div className="bg-white/3 rounded-2xl border border-white/10 backdrop-blur-sm overflow-hidden flex flex-col h-150 shadow-lg">
+                    <div className="p-4 border-b border-white/5 bg-white/2">
                         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                             <Video size={14} className="text-cyan-400" />
                             Select Video
                         </h3>
                     </div>
-                    <div className="flex-1 overflow-y-auto divide-y divide-white/5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                    <div className="flex-1 overflow-y-auto divide-y divide-white/5">
                         {topVideos.map((video) => (
                             <button
                                 key={video.id}
                                 onClick={() => setSelectedVideoId(video.id)}
-                                className={`w-full text-left p-4 flex gap-3 hover:bg-white/5 transition-all duration-200 group ${activeVideoId === video.id ? 'bg-white/5 border-l-2 border-cyan-400 pl-[14px]' : 'border-l-2 border-transparent'}`}
+                                className={`w-full text-left p-4 flex gap-3 hover:bg-white/5 transition-all duration-200 group ${activeVideoId === video.id ? 'bg-white/5 border-l-2 border-cyan-400 pl-3.5' : 'border-l-2 border-transparent'}`}
                             >
                                 <div className="relative w-28 aspect-video rounded-lg bg-gray-900 overflow-hidden shrink-0 shadow-md group-hover:shadow-lg transition-all border border-white/5">
                                     <img src={video.thumbnailUrl} alt="" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -143,7 +143,7 @@ export const AnalyticsContent: React.FC = () => {
                                         {video.title}
                                     </p>
                                     <div className="flex items-center gap-3 text-[10px] text-gray-500 font-medium">
-                                        <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded"><Play size={10} /> {parseInt(video.views).toLocaleString()}</span>
+                                        <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded"><Play size={10} /> {video.views.toLocaleString()}</span>
                                         <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded"><MessageSquare size={10} /> {video.comments}</span>
                                     </div>
                                 </div>
@@ -156,14 +156,14 @@ export const AnalyticsContent: React.FC = () => {
                 </div>
 
                 {/* Comments List for Selected Video */}
-                <div className="lg:col-span-2 bg-white/[0.03] rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg overflow-hidden h-[600px] flex flex-col">
-                    <div className="p-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                <div className="lg:col-span-2 bg-white/3 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg overflow-hidden h-150 flex flex-col">
+                    <div className="p-4 border-b border-white/5 bg-white/2 flex justify-between items-center">
                         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                             <MessageSquare size={14} className="text-purple-400" />
                             Waitlist Feedback
                         </h3>
                         {activeVideoStats && (
-                            <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded truncate max-w-[200px]">
+                            <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded truncate max-w-50">
                                 {activeVideoStats.title}
                             </span>
                         )}

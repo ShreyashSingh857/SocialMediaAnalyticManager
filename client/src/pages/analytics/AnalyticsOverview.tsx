@@ -6,7 +6,7 @@ import { useYouTubeData } from '../../hooks/useYouTubeData';
 type MetricType = 'views' | 'watchTime' | 'subs';
 
 export const AnalyticsOverview: React.FC = () => {
-    const { overview, history, topVideos } = useYouTubeData();
+    const { overview, history } = useYouTubeData();
     const [activeMetric, setActiveMetric] = useState<MetricType>('views');
 
     // Prepare chart data based on active metric
@@ -65,7 +65,7 @@ export const AnalyticsOverview: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Graph Section */}
-                <div className="lg:col-span-2 bg-white/[0.03] border border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
+                <div className="lg:col-span-2 bg-white/3 border border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
                     <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
                         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                             <TrendingUp className="text-cyan-400 w-5 h-5" />
@@ -91,7 +91,7 @@ export const AnalyticsOverview: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="min-w-0 h-[350px]">
+                    <div className="min-w-0 h-87.5">
                         <AnalyticsChart
                             title={`${chartConfig.title} (Last 30 Days)`}
                             data={chartConfig.data}
@@ -102,9 +102,9 @@ export const AnalyticsOverview: React.FC = () => {
                 </div>
 
                 {/* Top Videos Side Panel (Empty State as requested) */}
-                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-xl flex flex-col">
+                <div className="bg-white/3 border border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-xl flex flex-col">
                     <h2 className="text-lg font-semibold text-white mb-6">Top Performing Content</h2>
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-xl bg-white/[0.01]">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-xl bg-white/1">
                         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 text-gray-500">
                             <Video className="w-8 h-8 opacity-50" />
                         </div>
@@ -119,7 +119,7 @@ export const AnalyticsOverview: React.FC = () => {
 
 // Internal Sub-components
 const KPICard = ({ title, value, icon, label }: any) => (
-    <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300">
+    <div className="bg-white/3 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-lg flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300">
         <div className="flex items-center justify-between mb-4">
             <div className="p-2.5 bg-white/5 rounded-xl border border-white/5 group-hover:border-white/10 transition-colors shadow-inner">{icon}</div>
         </div>
