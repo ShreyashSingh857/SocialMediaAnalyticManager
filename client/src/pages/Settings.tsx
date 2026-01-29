@@ -1,9 +1,10 @@
 import React from 'react';
-import { Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User, CheckCircle } from 'lucide-react';
+import { Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User, CheckCircle, PenSquare } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
-    const { signInWithGoogle, unlinkIdentity, user } = useAuth();
+    const { signInWithGoogle, unlinkIdentity, user, profile } = useAuth();
     const [linking, setLinking] = React.useState<string | null>(null);
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
@@ -132,8 +133,8 @@ export const Settings: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Profile Placeholder (Muted/Coming Soon) */}
-                        <div className="bg-white/3 rounded-3xl border border-white/10 backdrop-blur-md overflow-hidden opacity-60">
+                        {/* Profile Settings */}
+                        <div className="bg-white/3 rounded-3xl border border-white/10 backdrop-blur-md overflow-hidden">
                             <div className="p-8 border-b border-white/5 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-white flex items-center gap-3">
                                     <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
@@ -141,10 +142,40 @@ export const Settings: React.FC = () => {
                                     </div>
                                     Profile Settings
                                 </h2>
-                                <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-white/10 rounded-full text-gray-400">Coming Soon</span>
+                                <Link to="/profile-setup" className="text-sm text-purple-300 hover:text-white transition-colors flex items-center gap-2">
+                                    <PenSquare size={16} />
+                                    Edit Profile
+                                </Link>
                             </div>
-                            <div className="p-8">
-                                <p className="text-gray-500 text-lg">Detailed profile customization features are currently under development.</p>
+                            <div className="p-8 space-y-4">
+                                <div className="flex items-center gap-4">
+                                    {profile?.profile_photo_url ? (
+                                        <img
+                                            src={profile.profile_photo_url}
+                                            alt={profile?.full_name || 'Profile'}
+                                            className="w-16 h-16 rounded-2xl object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-2xl bg-linear-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-lg font-bold">
+                                            {(profile?.full_name || user?.email || 'U').slice(0, 1).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-white font-semibold text-lg">{profile?.full_name || 'Creator'}</p>
+                                        <p className="text-sm text-gray-400">{user?.email || 'No email on file'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                        <p className="text-gray-400">Content Type</p>
+                                        <p className="text-white font-medium mt-1">{profile?.content_type || 'Not set'}</p>
+                                    </div>
+                                    <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                        <p className="text-gray-400">Location</p>
+                                        <p className="text-white font-medium mt-1">{profile?.location || 'Not set'}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
