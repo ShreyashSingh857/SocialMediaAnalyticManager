@@ -38,8 +38,8 @@ export const AnalyticsAudience: React.FC = () => {
         );
     }
 
-    const dayOfWeekAnalysis = insights?.weeklyTrend?.day_of_week_analysis ?? [];
-    const maxDayViews = Math.max(...dayOfWeekAnalysis.map((d) => d.views), 0);
+    const dayOfWeekAnalysis: { day_name: string; views: number }[] = insights?.weeklyTrend?.day_of_week_analysis ?? [];
+    const maxDayViews = Math.max(...dayOfWeekAnalysis.map((d: { day_name: string; views: number }) => d.views), 0);
 
     return (
         <div className="space-y-8">
