@@ -11,7 +11,7 @@ const ProtectedRoute = () => {
 
     // 1. Not logged in -> Login
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" replace state={{ from: location }} />;
     }
 
     // 2. Logged in, but no profile -> Profile Setup (prevent infinite loop if already there)

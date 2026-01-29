@@ -1,9 +1,11 @@
 import React from 'react';
-import { Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User } from 'lucide-react';
+import { Link as LinkIcon, AlertCircle, Settings as SettingsIcon, Shield, User, PenSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
-    const { signInWithGoogle, unlinkIdentity, user } = useAuth();
+    const { signInWithGoogle, unlinkIdentity, user, profile } = useAuth();
+    const navigate = useNavigate();
     const [linking, setLinking] = React.useState<string | null>(null);
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
     
@@ -125,16 +127,55 @@ export const Settings: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Profile Placeholder */}
-                    <div className="bg-[#12141a] rounded-2xl border border-white/5 overflow-hidden opacity-50 pointer-events-none">
-                        <div className="p-6 border-b border-white/5">
+                    {/* Profile Section */}
+                    <div className="bg-[#12141a] rounded-2xl border border-white/5 overflow-hidden">
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-white flex items-center gap-2">
                                 <User size={18} className="text-purple-400" />
                                 Profile Settings
                             </h2>
+                            <button
+                                onClick={() => navigate('/profile')}
+                                className="flex items-center gap-2 text-sm text-purple-300 hover:text-white transition-colors"
+                            >
+                                <PenSquare size={16} />
+                                View Profile
+                            </button>
                         </div>
-                        <div className="p-6">
-                            <p className="text-gray-500">Profile management coming soon.</p>
+                        <div className="p-6 space-y-4">
+                            <div className="flex items-center gap-4">
+                                {profile?.profile_photo_url ? (
+                                    <img
+                                        src={profile.profile_photo_url}
+                                        alt={profile?.full_name || 'Profile'}
+                                        className="w-14 h-14 rounded-xl object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-14 h-14 rounded-xl bg-linear-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-lg font-bold">
+                                        {(profile?.full_name || user?.email || 'U').slice(0, 1).toUpperCase()}
+                                    </div>
+                                )}
+                                <div>
+                                    <p className="text-white font-semibold">{profile?.full_name || 'Creator'}</p>
+                                    <p className="text-sm text-gray-400">{user?.email || 'No email on file'}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                                    <p className="text-gray-400">Content Type</p>
+                                    <p className="text-white font-medium mt-1">{profile?.content_type || 'Not set'}</p>
+                                </div>
+                                <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                                    <p className="text-gray-400">Location</p>
+                                    <p className="text-white font-medium mt-1">{profile?.location || 'Not set'}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => navigate('/profile-setup')}
+                                className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+                            >
+                                Edit Profile
+                            </button>
                         </div>
                     </div>
                 </div>
